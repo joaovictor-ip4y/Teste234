@@ -1,4 +1,4 @@
-name: Run PHPUnit with PR Annotations
+name: Run PHPUnit with Coverage and PR Comments
 
 on:
   push:
@@ -26,11 +26,48 @@ jobs:
 
       # Instalação das dependências do Composer
       - name: Install dependencies
-        run: composer install
+        run: |
+          composer install
 
-      # Executar testes PHPUnit com relatório
-      - name: Run PHPUnit tests with GitHub Annotations
-        uses: marvinpinto/phpunit-action@v2
-        with:
-          junit: true
-          coverage: true
+      # Executa os testes PHPUnit
+      - name: Run PHPUnit tests with coverage
+        run: |
+          vendor/bin/phpunit --coverage-clover=coverage.xml
+
+      # Verificar a cobertura do código
+      - name: Check coverage
+        id: coverage
+        run: |
+          COVERAGE=$(php -r "
+              libxml_use_internal_errors(true);
+              \$xml = simplexml_load_file('coverage.xml');
+              if (\$xml === false) {
+                  echo 'Erro ao carregar o arquivo coverage.xml';
+                  exit(1);
+              }
+              // Calcula a cobertura como (coveredelements / elements) * 100
+              \$coverage = (\$xml->project->metrics['coveredelements'] / \$xml->project->metrics['elements']) * 100;
+              echo \$coverage;
+          ")
+
+          echo "coverage=$COVERAGE" >> $GITHUB_ENV
+
+          # Verifica se a cobertura está abaixo de 60%
+          if (( $(echo "$COVERAGE < 60" | bc -l) )); then
+              echo "Cobertura abaixo de 60%: $COVERAGE%"
+              exit 1
+          else
+              echo "Cobertura OK: $COVERAGE%"
+          fi
+
+      # Adicionar comentário na PR
+      - name: Post comment on PR
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COVERAGE: ${{ env.coverage }}
+        run: |
+          curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d "$(jq -n --arg body "### PHPUnit Test Results 🚀\n\n- **Coverage:** $COVERAGE%" '{body: $body}')" \
+          "${{ github.event.pull_request.url }}/comments"
