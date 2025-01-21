@@ -63,14 +63,18 @@ jobs:
       - name: Post comment on PR
         if: ${{ github.event_name == 'pull_request' }}
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Usando o GITHUB_TOKEN padrão
           COVERAGE: ${{ env.coverage }}
         run: |
+          PR_URL="${{ github.event.pull_request.url }}"
           COMMENT_BODY="### PHPUnit Test Results 🚀\n\n- **Coverage:** $COVERAGE%"
-          echo "Posting comment: $COMMENT_BODY"
+          
+          # Verifica se a URL da PR está correta
+          echo "PR URL: $PR_URL"
+          echo "Comment Body: $COMMENT_BODY"
           
           # Postar o comentário
           curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
           -H "Content-Type: application/json" \
           -d "{\"body\": \"$COMMENT_BODY\"}" \
-          "${{ github.event.pull_request.url }}/comments"
+          "${PR_URL}/comments"
