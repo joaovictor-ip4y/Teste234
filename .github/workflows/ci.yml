@@ -1,0 +1,47 @@
+name: Run PHPUnit with Coverage
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout do código
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Configuração do PHP
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: xdebug
+
+      # Instalação das dependências do Composer
+      - name: Install dependencies
+        run: |
+          composer install
+
+      # Executa os testes PHPUnit com cobertura de código
+      - name: Run PHPUnit tests with coverage
+        run: |
+          vendor/bin/phpunit --coverage-text > coverage_report.txt
+          
+      # Cria um comentário na Pull Request com o relatório de cobertura
+      - name: Comment coverage on PR
+        if: github.event_name == 'pull_request'
+        run: |
+          COMMENT_BODY=$(cat coverage_report.txt)
+          PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
+          
+          curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+               -X POST \
+               -d "{\"body\": \"## Relatório de Cobertura\n\n$COMMENT_BODY\"}" \
+               "https://api.github.com/repos/${{ github.repository }}/issues/$PR_NUMBER/comments"

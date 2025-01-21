@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="vendor/autoload.php"
+         colors="true"
+         verbose="true">
+
+    <!-- Configuração da cobertura de código -->
+    <coverage processUncoveredFiles="true">
+        <include>
+            <!-- Diretório onde o seu código fonte está localizado -->
+            <directory>src</directory>
+        </include>
+    </coverage>
+
+    <testsuites>
+        <!-- Definição da suite de testes -->
+        <testsuite name="Application Test Suite">
+            <!-- Diretório onde seus testes estão localizados -->
+            <directory>tests</directory>
+        </testsuite>
+    </testsuites>
+
+    <!-- Definindo as variáveis de ambiente -->
+    <php>
+        <env name="XDEBUG_MODE" value="coverage"/>
+    </php>
+
+</phpunit>
