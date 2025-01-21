@@ -4,26 +4,18 @@ namespace App;
 
 class Calculator
 {
-    /**
-     * Soma dois números.
-     *
-     * @param float $a
-     * @param float $b
-     * @return float
-     */
-    public function add(float $a, float $b): float
+    public function add(int $a, int $b): int
     {
         return $a + $b;
     }
 
-    /**
-     * Subtrai dois números.
-     *
-     * @param float $a
-     * @param float $b
-     * @return float
-     */
-    public function subtract(float $a, float $b): float
+    public function multiply(int $a, int $b): int
+    {
+        return $a * $b;
+    }
+
+    // Método não coberto pelos testes
+    public function subtract(int $a, int $b): int
     {
         return $a - $b;
     }

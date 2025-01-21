@@ -1,4 +1,4 @@
-name: Run PHPUnit with Coverage
+name: Run PHPUnit with Coverage and PR Comments
 
 on:
   push:
@@ -29,19 +29,44 @@ jobs:
         run: |
           composer install
 
-      # Executa os testes PHPUnit com cobertura de código
+      # Executa os testes PHPUnit
       - name: Run PHPUnit tests with coverage
         run: |
-          vendor/bin/phpunit --coverage-text > coverage_report.txt
-          
-      # Cria um comentário na Pull Request com o relatório de cobertura
-      - name: Comment coverage on PR
-        if: github.event_name == 'pull_request'
+          vendor/bin/phpunit --coverage-clover=coverage.xml
+
+      # Verificar a cobertura do código
+      - name: Check coverage
+        id: coverage
         run: |
-          COMMENT_BODY=$(cat coverage_report.txt)
-          PR_NUMBER=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
+          COVERAGE=$(php -r "
+              libxml_use_internal_errors(true);
+              \$xml = simplexml_load_file('coverage.xml');
+              if (\$xml === false) {
+                  echo 'Erro ao carregar o arquivo coverage.xml';
+                  exit(1);
+              }
+              // Calcula a cobertura como (coveredelements / elements) * 100
+              \$coverage = (\$xml->project->metrics['coveredelements'] / \$xml->project->metrics['elements']) * 100;
+              echo \$coverage;
+          ")
+          echo "coverage=$COVERAGE" >> $GITHUB_ENV
           
-          curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-               -X POST \
-               -d "{\"body\": \"## Relatório de Cobertura\n\n$COMMENT_BODY\"}" \
-               "https://api.github.com/repos/${{ github.repository }}/issues/$PR_NUMBER/comments"
+          # Verifica se a cobertura está abaixo de 60%
+          if (( $(echo "$COVERAGE < 60" | bc -l) )); then
+              echo "Cobertura abaixo de 60%: $COVERAGE%"
+              exit 1
+          else
+              echo "Cobertura OK: $COVERAGE%"
+          fi
+
+      # Adicionar comentário na PR
+      - name: Post comment on PR
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}  # Usando o seu PAT_TOKEN aqui
+          COVERAGE: ${{ env.coverage }}
+        run: |
+          curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d "$(jq -n --arg body "### PHPUnit Test Results 🚀\n\n- **Coverage:** $COVERAGE%" '{body: $body}')" \
+          "${{ github.event.pull_request.url }}/comments"
