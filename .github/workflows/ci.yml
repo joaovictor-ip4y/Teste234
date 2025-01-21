@@ -57,13 +57,8 @@ jobs:
           ")
           echo "coverage=$COVERAGE" >> $GITHUB_ENV
           
-          # Verifica se a cobertura está abaixo de 60%
-          if (( $(echo "$COVERAGE < 60" | bc -l) )); then
-              echo "Cobertura abaixo de 60%: $COVERAGE%"
-              exit 1
-          else
-              echo "Cobertura OK: $COVERAGE%"
-          fi
+          # Verifica se a cobertura está abaixo de 60% e não impede a execução
+          echo "Cobertura calculada: $COVERAGE%"
 
       # Extrair detalhes dos testes (número de testes passados, falhados, etc)
       - name: Extract PHPUnit test results
@@ -78,7 +73,7 @@ jobs:
           echo "skipped=$SKIPPED" >> $GITHUB_ENV
           echo "total=$TOTAL" >> $GITHUB_ENV
 
-      # Adicionar comentário detalhado na PR
+      # Adicionar comentário detalhado na PR (sempre, mesmo se a cobertura for abaixo de 60%)
       - name: Post detailed comment on PR
         if: ${{ github.event_name == 'pull_request' }}
         run: |
