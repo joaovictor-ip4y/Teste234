@@ -62,11 +62,12 @@ jobs:
       # Adicionar comentário na PR
       - name: Post comment on PR
         if: ${{ github.event_name == 'pull_request' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}  # Usando o seu PAT_TOKEN aqui
-          COVERAGE: ${{ env.coverage }}
         run: |
-          curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
+          COMMENT_BODY="### PHPUnit Test Results 🚀\n\n- **Coverage:** ${{ env.coverage }}%"
+          echo "Posting comment: $COMMENT_BODY"
+
+          # Enviar o comentário para a PR usando a API do GitHub
+          curl -X POST -H "Authorization: token ${{ secrets.PAT_TOKEN }}" \
           -H "Content-Type: application/json" \
-          -d "$(jq -n --arg body "### PHPUnit Test Results 🚀\n\n- **Coverage:** $COVERAGE%" '{body: $body}')" \
-          "${{ github.event.pull_request.url }}/comments"
+          -d "{\"body\": \"$COMMENT_BODY\"}" \
+          "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
