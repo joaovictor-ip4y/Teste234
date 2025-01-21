@@ -32,7 +32,7 @@ jobs:
       # Executa os testes PHPUnit
       - name: Run PHPUnit tests with coverage
         run: |
-          vendor/bin/phpunit --coverage-clover=coverage.xml
+          vendor/bin/phpunit --coverage-clover=coverage.xml --log-junit junit.xml
 
       # Verificar a cobertura do código
       - name: Check coverage
@@ -59,12 +59,26 @@ jobs:
               echo "Cobertura OK: $COVERAGE%"
           fi
 
-      # Adicionar comentário na PR
-      - name: Post comment on PR
+      # Extrair detalhes dos testes (número de testes passados, falhados, etc)
+      - name: Extract PHPUnit test results
+        id: test_results
+        run: |
+          PASSED=$(xmllint --xpath "string(//testsuites/testsuite/test[@status='passed'])" junit.xml)
+          FAILED=$(xmllint --xpath "string(//testsuites/testsuite/test[@status='failed'])" junit.xml)
+          SKIPPED=$(xmllint --xpath "string(//testsuites/testsuite/test[@status='skipped'])" junit.xml)
+          TOTAL=$(xmllint --xpath "string(//testsuites/testsuite/@tests)" junit.xml)
+          echo "passed=$PASSED" >> $GITHUB_ENV
+          echo "failed=$FAILED" >> $GITHUB_ENV
+          echo "skipped=$SKIPPED" >> $GITHUB_ENV
+          echo "total=$TOTAL" >> $GITHUB_ENV
+
+      # Adicionar comentário detalhado na PR
+      - name: Post detailed comment on PR
         if: ${{ github.event_name == 'pull_request' }}
         run: |
-          COMMENT_BODY="### PHPUnit Test Results 🚀\n\n- **Coverage:** ${{ env.coverage }}%"
-          echo "Posting comment: $COMMENT_BODY"
+          COMMENT_BODY="### PHPUnit Test Results 🚀\n\n- **Coverage:** ${{ env.coverage }}%\n- **Total Tests:** ${{ env.total }}\n- **Passed:** ${{ env.passed }}\n- **Failed:** ${{ env.failed }}\n- **Skipped:** ${{ env.skipped }}"
+
+          echo "Posting detailed comment: $COMMENT_BODY"
 
           # Enviar o comentário para a PR usando a API do GitHub
           curl -X POST -H "Authorization: token ${{ secrets.PAT_TOKEN }}" \
