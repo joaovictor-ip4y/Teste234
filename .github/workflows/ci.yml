@@ -34,6 +34,12 @@ jobs:
         run: |
           vendor/bin/phpunit --coverage-clover=coverage.xml --log-junit junit.xml
 
+      # Instalação do xmllint
+      - name: Install xmllint
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxml2-utils
+
       # Verificar a cobertura do código
       - name: Check coverage
         id: coverage
