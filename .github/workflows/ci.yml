@@ -49,14 +49,21 @@ jobs:
               \$coverage = (\$xml->project->metrics['coveredelements'] / \$xml->project->metrics['elements']) * 100;
               echo \$coverage;
           ")
-          echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
+          echo "coverage=$COVERAGE" >> $GITHUB_ENV
+          # Verifica se a cobertura está abaixo de 60%
+          if (( $(echo "$COVERAGE < 60" | bc -l) )); then
+              echo "Cobertura abaixo de 60%: $COVERAGE%"
+              exit 1
+          else
+              echo "Cobertura OK: $COVERAGE%"
+          fi
 
       # Adicionar comentário na PR
       - name: Post comment on PR
         if: ${{ github.event_name == 'pull_request' }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COVERAGE: ${{ env.COVERAGE }}
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }} # Alterado para usar o token pessoal
+          COVERAGE: ${{ env.coverage }}
         run: |
           curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
           -H "Content-Type: application/json" \
