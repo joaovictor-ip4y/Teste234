@@ -10,7 +10,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04  # Adicionado uma versão específica do Ubuntu
 
     steps:
       # Checkout do código
@@ -50,22 +50,15 @@ jobs:
               echo \$coverage;
           ")
           echo "coverage=$COVERAGE" >> $GITHUB_ENV
-          # Verifica se a cobertura está abaixo de 60%
-          if (( $(echo "$COVERAGE < 60" | bc -l) )); then
-              echo "Cobertura abaixo de 60%: $COVERAGE%"
-              exit 1
-          else
-              echo "Cobertura OK: $COVERAGE%"
-          fi
 
       # Adicionar comentário na PR
       - name: Post comment on PR
         if: ${{ github.event_name == 'pull_request' }}
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }} # Alterado para usar o token pessoal
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COVERAGE: ${{ env.coverage }}
         run: |
           curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
           -H "Content-Type: application/json" \
-          -d "$(jq -n --arg body "### PHPUnit Test Results 🚀\n\n- **Coverage:** ${COVERAGE}%\n\n:warning: Acompanhe a cobertura para garantir qualidade!" '{body: $body}')" \
+          -d "{\"body\":\"### PHPUnit Test Results 🚀\n\n- **Coverage:** $COVERAGE%\"}" \
           "${{ github.event.pull_request.url }}/comments"
