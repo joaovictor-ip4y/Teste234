@@ -62,17 +62,11 @@ jobs:
       # Adicionar comentário na PR
       - name: Post comment on PR
         if: ${{ github.event_name == 'pull_request' }}
-        uses: peter-evans/github-script@v6
-        with:
-          script: |
-            const prUrl = `${{ github.event.pull_request.url }}`
-            const coverage = process.env.coverage
-            const body = `### PHPUnit Test Results 🚀\n\n- **Coverage:** ${coverage}%`
-
-            // Postar o comentário na PR
-            await github.rest.issues.createComment({
-              issue_number: ${{ github.event.pull_request.number }},
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: body
-            })
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}  # Usando o seu PAT_TOKEN aqui
+          COVERAGE: ${{ env.coverage }}
+        run: |
+          curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d "$(jq -n --arg body "### PHPUnit Test Results 🚀\n\n- **Coverage:** $COVERAGE%" '{body: $body}')" \
+          "${{ github.event.pull_request.url }}/comments"
