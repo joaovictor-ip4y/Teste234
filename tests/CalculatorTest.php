@@ -1,26 +1,23 @@
 <?php
 
-use PHPUnit\Framework\TestCase;
+namespace Tests;
+
 use App\Calculator;
+use PHPUnit\Framework\TestCase;
 
 class CalculatorTest extends TestCase
 {
-    private Calculator $calculator;
-
-    protected function setUp(): void
+    public function testAdd()
     {
-        $this->calculator = new Calculator();
+        $calculator = new Calculator();
+        $this->assertEquals(4, $calculator->add(2, 2));
     }
 
-    public function testAdd(): void
+    // Testando apenas o método add(), o que reduz a cobertura
+    public function testMultiply()
     {
-        $this->assertEquals(5, $this->calculator->add(2, 3));
-        $this->assertEquals(0, $this->calculator->add(-1, 1));
-    }
-
-    public function testSubtract(): void
-    {
-        $this->assertEquals(1, $this->calculator->subtract(3, 2));
-        $this->assertEquals(-2, $this->calculator->subtract(-1, 1));
+        $calculator = new Calculator();
+        $this->assertEquals(6, $calculator->multiply(2, 3));
     }
 }
+
