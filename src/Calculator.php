@@ -1,22 +1,30 @@
 <?php
+// src/Calculator.php
 
 namespace App;
 
 class Calculator
 {
-    public function add(int $a, int $b): int
+    public function add($a, $b)
     {
         return $a + $b;
     }
 
-    public function multiply(int $a, int $b): int
+    public function subtract($a, $b)
+    {
+        return $a - $b;
+    }
+
+    public function multiply($a, $b)
     {
         return $a * $b;
     }
 
-    // Método não coberto pelos testes
-    public function subtract(int $a, int $b): int
+    public function divide($a, $b)
     {
-        return $a - $b;
+        if ($b == 0) {
+            throw new \Exception("Cannot divide by zero");
+        }
+        return $a / $b;
     }
 }

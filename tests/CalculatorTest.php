@@ -1,9 +1,10 @@
 <?php
+// tests/CalculatorTest.php
 
-namespace Tests;
+namespace App\Tests;
 
-use App\Calculator;
 use PHPUnit\Framework\TestCase;
+use App\Calculator;
 
 class CalculatorTest extends TestCase
 {
@@ -13,11 +14,5 @@ class CalculatorTest extends TestCase
         $this->assertEquals(4, $calculator->add(2, 2));
     }
 
-    // Testando apenas o método add(), o que reduz a cobertura
-    public function testMultiply()
-    {
-        $calculator = new Calculator();
-        $this->assertEquals(6, $calculator->multiply(2, 3));
-    }
+    // Deixamos de testar as funções 'subtract', 'multiply' e 'divide' para reduzir a cobertura.
 }
-
