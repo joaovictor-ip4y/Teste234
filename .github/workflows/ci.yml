@@ -59,10 +59,18 @@ jobs:
               TIME=0
           else
               # Extrair métricas do arquivo junit.xml
-              TOTAL_TESTS=$(xmllint --xpath "string(//testsuites/@tests)" junit.xml || echo "0")
-              FAILURES=$(xmllint --xpath "string(//testsuites/@failures)" junit.xml || echo "0")
-              SKIPPED=$(xmllint --xpath "string(//testsuites/@skipped)" junit.xml || echo "0")
-              TIME=$(xmllint --xpath "string(//testsuites/@time)" junit.xml || echo "0")
+              TOTAL_TESTS=$(xmllint --xpath "string(//testsuite/@tests)" junit.xml || echo "0")
+              FAILURES=$(xmllint --xpath "string(//testsuite/@failures)" junit.xml || echo "0")
+              SKIPPED=$(xmllint --xpath "string(//testsuite/@skipped)" junit.xml || echo "0")
+              TIME=$(xmllint --xpath "string(//testsuite/@time)" junit.xml || echo "0")
+          fi
+
+          # Garantir que o número de testes e tempo de execução não sejam zero
+          if [[ "$TOTAL_TESTS" == "0" ]]; then
+              TOTAL_TESTS="N/A"
+          fi
+          if [[ "$TIME" == "0" ]]; then
+              TIME="N/A"
           fi
 
           # Criar o corpo do comentário
