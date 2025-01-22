@@ -41,6 +41,13 @@ jobs:
           echo "### End of Commit Report" >> commit_report.txt
           echo "" >> commit_report.txt
 
+      - name: Create tag for release
+        run: |
+          # Create a tag for the release
+          TAG_NAME="pr-${{ github.event.pull_request.number }}-report"
+          git tag $TAG_NAME
+          git push origin $TAG_NAME
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
