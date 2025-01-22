@@ -34,7 +34,6 @@ jobs:
       # Verificar a cobertura do código
       - name: Check coverage
         id: coverage_check
-        continue-on-error: true
         run: |
           COVERAGE=$(php -r "
               libxml_use_internal_errors(true);
@@ -60,10 +59,10 @@ jobs:
       - name: Extract JUnit metrics
         id: junit_metrics
         run: |
-          TOTAL_TESTS=$(xmllint --xpath "string(//testsuite/@tests)" junit.xml || echo "N/A")
-          FAILURES=$(xmllint --xpath "string(//testsuite/@failures)" junit.xml || echo "N/A")
-          SKIPPED=$(xmllint --xpath "string(//testsuite/@skipped)" junit.xml || echo "N/A")
-          TIME=$(xmllint --xpath "string(//testsuite/@time)" junit.xml || echo "N/A")
+          TOTAL_TESTS=$(xmllint --xpath "string(//testsuite[1]/@tests)" junit.xml || echo "N/A")
+          FAILURES=$(xmllint --xpath "string(//testsuite[1]/@failures)" junit.xml || echo "N/A")
+          SKIPPED=$(xmllint --xpath "string(//testsuite[1]/@skipped)" junit.xml || echo "N/A")
+          TIME=$(xmllint --xpath "string(//testsuite[1]/@time)" junit.xml || echo "N/A")
 
           echo "TOTAL_TESTS=$TOTAL_TESTS" >> $GITHUB_ENV
           echo "FAILURES=$FAILURES" >> $GITHUB_ENV
@@ -74,7 +73,7 @@ jobs:
       - name: Generate PR Comment Body
         id: generate_comment
         run: |
-          COMMENT_BODY="### PHPUnit Test Coverage Report 🚀\n\n- **Total Coverage:** ${{ env.COVERAGE }}%\n- **Total Tests:** ${{ env.TOTAL_TESTS }}\n- **Failures:** ${{ env.FAILURES }}\n- **Skipped:** ${{ env.SKIPPED }}\n- **Execution Time:** ${{ env.TIME }} seconds\n"
+          COMMENT_BODY="### PHPUnit Test Coverage Report 🚀\n\n- **Total Coverage:** ${{ env.COVERAGE }}%\n- **Total Tests:** ${{ env.TOTAL_TESTS }}\n- **Failures:** ${{ env.FAILURES }}\n- **Skipped:** ${{ env.SKIPPED }}\n- **Execution Time:** ${{ env.TIME }} seconds"
           echo "COMMENT_BODY=$COMMENT_BODY" >> $GITHUB_ENV
 
       # Postar o comentário na PR
@@ -87,10 +86,3 @@ jobs:
           -H "Content-Type: application/json" \
           -d "{\"body\": \"${{ env.COMMENT_BODY }}\"}" \
           "${{ github.event.pull_request.comments_url }}"
-
-      # Bloquear o merge se a cobertura for inferior a 60%
-      - name: Block merge if coverage < 60
-        if: ${{ steps.coverage_check.outcome == 'failure' }}
-        run: |
-          echo "Cobertura de testes abaixo de 60%, bloqueando o merge!"
-          exit 1
