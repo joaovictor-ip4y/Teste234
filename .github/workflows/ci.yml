@@ -63,7 +63,7 @@ jobs:
               TIME=$(xmllint --xpath "string(//testsuites/@time)" junit.xml || echo "0")
           fi
 
-          # Criar o corpo do comentário
+          # Criar o corpo do comentário com todas as métricas
           COMMENT_BODY=$(jq -n --arg coverage "$TOTAL_COVERAGE" --arg total "$TOTAL_TESTS" --arg failures "$FAILURES" --arg skipped "$SKIPPED" --arg time "$TIME" \
           '{"body": "### PHPUnit Test Coverage Report 🚀\n\n- **Total Coverage:** \($coverage)%\n- **Total Tests:** \($total)\n- **Failures:** \($failures)\n- **Skipped:** \($skipped)\n- **Execution Time:** \($time) seconds\n"}')
 
