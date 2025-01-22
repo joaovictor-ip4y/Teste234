@@ -31,10 +31,15 @@ jobs:
         run: |
           vendor/bin/phpunit --coverage-clover=coverage.xml --log-junit junit.xml
 
+      # Instalação do xmllint
+      - name: Install libxml2-utils
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxml2-utils
+
       # Instalação do jq para manipulação de JSON
       - name: Install jq
         run: |
-          sudo apt-get update
           sudo apt-get install -y jq
 
       # Processar cobertura e criar o corpo do comentário
