@@ -35,7 +35,8 @@ jobs:
           vendor/bin/phpunit --coverage-clover=coverage.xml
 
       # Verificar a cobertura do código
-      - name: Check coverage
+      - name: Check coverage and post comment
+        id: coverage
         run: |
           COVERAGE=$(php -r "
               libxml_use_internal_errors(true);
@@ -49,6 +50,19 @@ jobs:
               echo \$coverage;
           ")
 
+          # Postar comentário na PR com a cobertura
+          COMMENT_BODY=$(jq -n --arg coverage "$COVERAGE" \
+          '{"body": "### PHPUnit Test Coverage Report 🚀\n\n- **Total Coverage:** \($coverage)%"}')
+
+          echo "$COMMENT_BODY" > comment.json
+
+          if [[ -n "${GITHUB_TOKEN}" && "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d @comment.json \
+            "${{ github.event.pull_request.comments_url }}"
+          fi
+
           # Verifica se a cobertura está abaixo de 60%
           if (( $(echo "$COVERAGE < 60" | bc -l) )); then
               echo "Cobertura abaixo de 60%: $COVERAGE%"
@@ -56,5 +70,3 @@ jobs:
           else
               echo "Cobertura OK: $COVERAGE%"
           fi
-          
-
