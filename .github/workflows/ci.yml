@@ -97,10 +97,13 @@ jobs:
           '{"body": "### PHPUnit Test Coverage Report 🚀\n\n- **Total Coverage:** \($coverage)%\n- **Total Tests:** \($total)\n- **Failures:** \($failures)\n- **Skipped:** \($skipped)\n- **Execution Time:** \($time) seconds\n"}')
 
           echo "$COMMENT_BODY" > comment.json
+          
+          # Definir o corpo do comentário como saída para uso posterior
+          echo "body=$(cat comment.json)" >> $GITHUB_ENV
 
       # Comentar na PR com o resultado do teste
       - name: Post comment on PR
         uses: peter-evans/create-or-update-comment@v2
         with:
           issue-number: ${{ github.event.pull_request.number }}
-          body: ${{ steps.extract_data.outputs.body }}
+          body: ${{ env.body }}
