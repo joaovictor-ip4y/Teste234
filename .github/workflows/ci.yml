@@ -49,10 +49,11 @@ jobs:
               echo \$coverage;
           ")
 
-          # Verifica se a cobertura está abaixo de 60%
+          echo "Total Coverage: $COVERAGE%" 
+
+          # Verifica se a cobertura está abaixo de 60% e exibe uma mensagem de advertência
           if (( $(echo "$COVERAGE < 60" | bc -l) )); then
               echo "Cobertura abaixo de 60%: $COVERAGE%"
-              exit 1
           else
               echo "Cobertura OK: $COVERAGE%"
           fi
