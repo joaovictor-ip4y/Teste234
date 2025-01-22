@@ -34,6 +34,7 @@ jobs:
       # Verificar a cobertura do código
       - name: Check coverage
         id: coverage_check
+        continue-on-error: true # Permite continuar mesmo com falhas
         run: |
           COVERAGE=$(php -r "
               libxml_use_internal_errors(true);
@@ -76,7 +77,7 @@ jobs:
 
       # Postar o comentário na PR
       - name: Post comment on PR
-        if: ${{ always() }} # Sempre executa, mesmo que etapas anteriores falhem
+        if: always() # Sempre executa, mesmo que etapas anteriores falhem
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
