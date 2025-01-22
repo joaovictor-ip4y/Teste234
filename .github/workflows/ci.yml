@@ -1,10 +1,7 @@
-name: Run PHPUnit with Coverage and Post Results
+name: PHPUnit with Coverage Check
 
 on:
   pull_request:
-    branches:
-      - main
-  push:
     branches:
       - main
 
@@ -28,13 +25,13 @@ jobs:
       - name: Install dependencies
         run: composer install
 
-      # Executa os testes PHPUnit
+      # Executa os testes PHPUnit com cobertura
       - name: Run PHPUnit tests with coverage
         run: |
           vendor/bin/phpunit --coverage-clover=coverage.xml --log-junit=junit.xml
 
-      # Extração e validação da cobertura
-      - name: Check coverage
+      # Extrair cobertura do arquivo coverage.xml
+      - name: Extract coverage
         id: coverage_check
         run: |
           COVERAGE=$(php -r "
@@ -47,31 +44,8 @@ jobs:
               \$coverage = (\$xml->project->metrics['coveredelements'] / \$xml->project->metrics['elements']) * 100;
               echo round(\$coverage, 2);
           ")
-
           echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
-
-          echo "Cobertura atual: $COVERAGE%"
-
-          if [ $(echo "$COVERAGE < 60" | bc) -eq 1 ]; then
-              echo "Cobertura abaixo de 60%: $COVERAGE%"
-              exit 1
-          fi
-
-      # Comentar resultados na PR
-      - name: Post test coverage results
-        uses: peter-evans/create-or-update-comment@v2
-        with:
-          token: ${{ secrets.PAT_TOKEN }}
-          repository: ${{ github.repository }}
-          issue-number: ${{ github.event.pull_request.number }}
-          body: |
-            ### PHPUnit Test Coverage Report 🚀
-
-            - **Total Coverage:** ${{ env.COVERAGE }}%
-            - **Total Tests:** ${{ steps.parse_junit.outputs.total_tests }}
-            - **Failures:** ${{ steps.parse_junit.outputs.failures }}
-            - **Skipped:** ${{ steps.parse_junit.outputs.skipped }}
-            - **Execution Time:** ${{ steps.parse_junit.outputs.execution_time }}
+          echo "Cobertura calculada: $COVERAGE%"
 
       # Parse junit.xml para obter dados adicionais
       - name: Parse junit.xml
@@ -98,3 +72,28 @@ jobs:
           echo "failures=$FAILURES" >> $GITHUB_ENV
           echo "skipped=$SKIPPED" >> $GITHUB_ENV
           echo "execution_time=$TIME" >> $GITHUB_ENV
+
+      # Comentar resultados na PR
+      - name: Post test results
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          repository: ${{ github.repository }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ### PHPUnit Test Coverage Report 🚀
+
+            - **Total Coverage:** ${{ env.COVERAGE }}%
+            - **Total Tests:** ${{ env.total_tests }}
+            - **Failures:** ${{ env.failures }}
+            - **Skipped:** ${{ env.skipped }}
+            - **Execution Time:** ${{ env.execution_time }} seconds
+
+      # Validar cobertura (bloqueio se menor que 60%)
+      - name: Validate coverage threshold
+        if: always() # Executa mesmo que passos anteriores falhem
+        run: |
+          if [ $(echo "${{ env.COVERAGE }} < 60" | bc) -eq 1 ]; then
+              echo "Cobertura abaixo do limite mínimo: ${{ env.COVERAGE }}%"
+              exit 1
+          fi
