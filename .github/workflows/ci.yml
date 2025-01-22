@@ -1,7 +1,10 @@
-name: Run PHPUnit with Coverage and Post Comments
+name: Run PHPUnit with Coverage and Post Results
 
 on:
   pull_request:
+    branches:
+      - main
+  push:
     branches:
       - main
 
@@ -23,18 +26,16 @@ jobs:
 
       # Instalação das dependências do Composer
       - name: Install dependencies
-        run: |
-          composer install
+        run: composer install
 
       # Executa os testes PHPUnit
       - name: Run PHPUnit tests with coverage
         run: |
           vendor/bin/phpunit --coverage-clover=coverage.xml --log-junit=junit.xml
 
-      # Verificar a cobertura do código
+      # Extração e validação da cobertura
       - name: Check coverage
         id: coverage_check
-        continue-on-error: true # Permite continuar mesmo com falhas
         run: |
           COVERAGE=$(php -r "
               libxml_use_internal_errors(true);
@@ -49,39 +50,51 @@ jobs:
 
           echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
 
-          if (( $(echo "$COVERAGE < 60" | bc -l) )); then
+          echo "Cobertura atual: $COVERAGE%"
+
+          if [ $(echo "$COVERAGE < 60" | bc) -eq 1 ]; then
               echo "Cobertura abaixo de 60%: $COVERAGE%"
               exit 1
           fi
 
-      # Extrair métricas do arquivo junit.xml
-      - name: Extract JUnit metrics
-        id: junit_metrics
-        run: |
-          TOTAL_TESTS=$(xmllint --xpath "string(//testsuite[1]/@tests)" junit.xml || echo "N/A")
-          FAILURES=$(xmllint --xpath "string(//testsuite[1]/@failures)" junit.xml || echo "N/A")
-          SKIPPED=$(xmllint --xpath "string(//testsuite[1]/@skipped)" junit.xml || echo "N/A")
-          TIME=$(xmllint --xpath "string(//testsuite[1]/@time)" junit.xml || echo "N/A")
+      # Comentar resultados na PR
+      - name: Post test coverage results
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          repository: ${{ github.repository }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ### PHPUnit Test Coverage Report 🚀
 
-          echo "TOTAL_TESTS=$TOTAL_TESTS" >> $GITHUB_ENV
-          echo "FAILURES=$FAILURES" >> $GITHUB_ENV
-          echo "SKIPPED=$SKIPPED" >> $GITHUB_ENV
-          echo "TIME=$TIME" >> $GITHUB_ENV
+            - **Total Coverage:** ${{ env.COVERAGE }}%
+            - **Total Tests:** ${{ steps.parse_junit.outputs.total_tests }}
+            - **Failures:** ${{ steps.parse_junit.outputs.failures }}
+            - **Skipped:** ${{ steps.parse_junit.outputs.skipped }}
+            - **Execution Time:** ${{ steps.parse_junit.outputs.execution_time }}
 
-      # Gerar o corpo do comentário com as métricas
-      - name: Generate PR Comment Body
-        id: generate_comment
+      # Parse junit.xml para obter dados adicionais
+      - name: Parse junit.xml
+        id: parse_junit
         run: |
-          COMMENT_BODY="### PHPUnit Test Coverage Report 🚀\n\n- **Total Coverage:** ${{ env.COVERAGE }}%\n- **Total Tests:** ${{ env.TOTAL_TESTS }}\n- **Failures:** ${{ env.FAILURES }}\n- **Skipped:** ${{ env.SKIPPED }}\n- **Execution Time:** ${{ env.TIME }} seconds"
-          echo "COMMENT_BODY=$COMMENT_BODY" >> $GITHUB_ENV
+          TESTS=$(php -r "
+              \$xml = simplexml_load_file('junit.xml');
+              echo (int) \$xml->testsuite['tests'];
+          ")
+          FAILURES=$(php -r "
+              \$xml = simplexml_load_file('junit.xml');
+              echo (int) \$xml->testsuite['failures'];
+          ")
+          SKIPPED=$(php -r "
+              \$xml = simplexml_load_file('junit.xml');
+              echo (int) \$xml->testsuite['skipped'];
+          ")
+          TIME=$(php -r "
+              \$xml = simplexml_load_file('junit.xml');
+              echo (float) \$xml->testsuite['time'];
+          ")
 
-      # Postar o comentário na PR
-      - name: Post comment on PR
-        if: always() # Sempre executa, mesmo que etapas anteriores falhem
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
-        run: |
-          curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
-          -H "Content-Type: application/json" \
-          -d "{\"body\": \"${{ env.COMMENT_BODY }}\"}" \
-          "${{ github.event.pull_request.comments_url }}"
+          echo "total_tests=$TESTS" >> $GITHUB_ENV
+          echo "failures=$FAILURES" >> $GITHUB_ENV
+          echo "skipped=$SKIPPED" >> $GITHUB_ENV
+          echo "execution_time=$TIME" >> $GITHUB_ENV
