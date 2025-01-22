@@ -38,6 +38,13 @@ jobs:
       - name: Check coverage
         id: coverage
         run: |
+          # Verificar se coverage.xml foi gerado
+          if [[ ! -f coverage.xml ]]; then
+            echo "coverage.xml não foi gerado"
+            exit 1
+          fi
+
+          # Cálculo da cobertura
           COVERAGE=$(php -r "
               libxml_use_internal_errors(true);
               \$xml = simplexml_load_file('coverage.xml');
@@ -50,19 +57,31 @@ jobs:
               echo \$coverage;
           ")
 
-          # Verifica se a cobertura está abaixo de 60% e força falha se necessário
           echo "Cobertura: $COVERAGE%"
+
+          # Armazenar o valor da cobertura
           echo "coverage=$COVERAGE" >> $GITHUB_ENV
 
       # Criar comentário sobre os resultados dos testes
       - name: Generate PR Comment Body
         id: generate_comment
         run: |
+          # Verificar se o junit.xml foi gerado
+          if [[ ! -f junit.xml ]]; then
+            echo "junit.xml não foi gerado"
+            exit 1
+          fi
+
           # Extrair dados do junit.xml
           TOTAL_TESTS=$(xmllint --xpath "string(//testsuites/@tests)" junit.xml || echo "0")
           FAILURES=$(xmllint --xpath "string(//testsuites/@failures)" junit.xml || echo "0")
           SKIPPED=$(xmllint --xpath "string(//testsuites/@skipped)" junit.xml || echo "0")
           TIME=$(xmllint --xpath "string(//testsuites/@time)" junit.xml || echo "0")
+
+          echo "Total Tests: $TOTAL_TESTS"
+          echo "Failures: $FAILURES"
+          echo "Skipped: $SKIPPED"
+          echo "Execution Time: $TIME"
 
           # Criar o corpo do comentário
           COMMENT_BODY=$(jq -n --arg coverage "$COVERAGE" --arg total "$TOTAL_TESTS" --arg failures "$FAILURES" --arg skipped "$SKIPPED" --arg time "$TIME" \
