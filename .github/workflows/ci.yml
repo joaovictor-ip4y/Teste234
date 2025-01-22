@@ -34,11 +34,9 @@ jobs:
         run: |
           vendor/bin/phpunit --coverage-clover=coverage.xml --log-junit=junit.xml
 
-      # Verifica cobertura e posta comentário
-      - name: Post Coverage Result
-        if: always()  # Garante que o comentário será postado, mesmo com falha
+      # Verificar a cobertura do código e postar o comentário
+      - name: Check coverage and post comment
         run: |
-          # Calcula a cobertura de código
           COVERAGE=$(php -r "
               libxml_use_internal_errors(true);
               \$xml = simplexml_load_file('coverage.xml');
@@ -51,29 +49,18 @@ jobs:
               echo \$coverage;
           ")
 
-          # Garante que o código será barrado se a cobertura for menor que 60%
+          # Definir variáveis de cobertura
+          echo "Cobertura de código: $COVERAGE%"
+
+          # Formatar o comentário
+          COMMENT="### PHPUnit Test Coverage Report 🚀\n\n- **Total Coverage:** $COVERAGE%\n"
+
+          # Caso a cobertura seja menor que 60%, bloqueia e comenta
           if (( $(echo "$COVERAGE < 60" | bc -l) )); then
-            echo "Cobertura abaixo de 60%, barrando execução!";
-            exit 1;
+              COMMENT+="- **Coverage is below 60%**: $COVERAGE%\n\nPlease improve your test coverage!"
+              echo "$COMMENT" | gh pr comment ${{ github.event.pull_request.number }} --body
+              exit 1
+          else
+              COMMENT+="- **Coverage is OK!**"
+              echo "$COMMENT" | gh pr comment ${{ github.event.pull_request.number }} --body
           fi
-
-          # Extração de dados do JUnit para comentários
-          TESTS=$(grep -o 'tests="[^"]*' junit.xml | head -n 1 | sed 's/tests="//')
-          FAILURES=$(grep -o 'failures="[^"]*' junit.xml | head -n 1 | sed 's/failures="//')
-          SKIPPED=$(grep -o 'skipped="[^"]*' junit.xml | head -n 1 | sed 's/skipped="//')
-          EXECUTION_TIME=$(grep -o 'time="[^"]*' junit.xml | head -n 1 | sed 's/time="//')
-
-          # Criação do comentário
-          COMMENT="### PHPUnit Test Coverage Report 🚀
-          - **Total Coverage:** \$COVERAGE%
-          - **Total Tests:** \$TESTS
-          - **Failures:** \$FAILURES
-          - **Skipped:** \$SKIPPED
-          - **Execution Time:** \$EXECUTION_TIME seconds
-          
-          "
-
-          # Postar o comentário no PR
-          curl -H "Authorization: token ${{ secrets.PAT_TOKEN }}" -X POST \
-            -d "{\"body\": \"$COMMENT\"}" \
-            "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
