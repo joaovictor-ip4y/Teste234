@@ -56,8 +56,8 @@ jobs:
 
           echo "$COMMENT_BODY" > comment.json
 
-          if [[ -n "${GITHUB_TOKEN}" && "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
-            curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
+          if [[ -n "${PAT_TOKEN}" && "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            curl -X POST -H "Authorization: token $PAT_TOKEN" \
             -H "Content-Type: application/json" \
             -d @comment.json \
             "${{ github.event.pull_request.comments_url }}"
