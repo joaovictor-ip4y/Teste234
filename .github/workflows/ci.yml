@@ -60,10 +60,10 @@ jobs:
       - name: Extract JUnit metrics
         id: junit_metrics
         run: |
-          TOTAL_TESTS=$(xmllint --xpath "string(//testsuites/@tests)" junit.xml || echo "N/A")
-          FAILURES=$(xmllint --xpath "string(//testsuites/@failures)" junit.xml || echo "N/A")
-          SKIPPED=$(xmllint --xpath "string(//testsuites/@skipped)" junit.xml || echo "N/A")
-          TIME=$(xmllint --xpath "string(//testsuites/@time)" junit.xml || echo "N/A")
+          TOTAL_TESTS=$(xmllint --xpath "string(//testsuite/@tests)" junit.xml || echo "N/A")
+          FAILURES=$(xmllint --xpath "string(//testsuite/@failures)" junit.xml || echo "N/A")
+          SKIPPED=$(xmllint --xpath "string(//testsuite/@skipped)" junit.xml || echo "N/A")
+          TIME=$(xmllint --xpath "string(//testsuite/@time)" junit.xml || echo "N/A")
 
           echo "TOTAL_TESTS=$TOTAL_TESTS" >> $GITHUB_ENV
           echo "FAILURES=$FAILURES" >> $GITHUB_ENV
