@@ -99,9 +99,17 @@ jobs:
           # Exibir o comentário antes de postar
           echo "Comment Body: $COMMENT_BODY"
 
-          # Postar o comentário na PR usando seu token PAT_TOKEN
-          curl -X POST -H "Authorization: token $PAT_TOKEN" \
+          # Tentar postar o comentário e capturar a resposta
+          RESPONSE=$(curl -X POST -H "Authorization: token $PAT_TOKEN" \
           -H "Content-Type: application/json" \
           -d "$(jq -n --arg body "$COMMENT_BODY" '{body: $body}')" \
-          "${{ github.event.pull_request.url }}/comments"
+          "${{ github.event.pull_request.url }}/comments" -s -w "%{http_code}")
 
+          echo "API Response: $RESPONSE"
+          
+          # Verifique se a resposta da API é 201 (Criado)
+          HTTP_CODE=$(echo $RESPONSE | tail -n1)
+          if [[ "$HTTP_CODE" -ne 201 ]]; then
+            echo "Falha ao postar o comentário. Código HTTP: $HTTP_CODE"
+            exit 1
+          fi
