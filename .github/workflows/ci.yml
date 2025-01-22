@@ -33,6 +33,19 @@ jobs:
         run: |
           vendor/bin/phpunit --coverage-clover=coverage.xml --log-junit=junit.xml
 
+      - name: List generated files
+        run: |
+          echo "Listando arquivos no diretório..."
+          ls -la
+
+      - name: Display content of junit.xml and coverage.xml
+        run: |
+          echo "Conteúdo do arquivo junit.xml:"
+          cat junit.xml || echo "junit.xml não encontrado"
+          
+          echo "Conteúdo do arquivo coverage.xml:"
+          cat coverage.xml || echo "coverage.xml não encontrado"
+
       - name: Generate PR Comment Body
         id: coverage
         run: |
