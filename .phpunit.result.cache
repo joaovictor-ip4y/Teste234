@@ -1,1 +1,1 @@
-{"version":1,"defects":[],"times":{"CalculatorTest::testAdd":0.001,"CalculatorTest::testSubtract":0.001,"StringUtilsTest::testToUpperCase":0,"StringUtilsTest::testReverseString":0,"StringUtilsTest::testIsPalindrome":0,"App\\Tests\\CalculatorTest::testAdd":0.007}}
+{"version":1,"defects":[],"times":{"CalculatorTest::testAdd":0.008,"CalculatorTest::testSubtract":0.001,"StringUtilsTest::testToUpperCase":0,"StringUtilsTest::testReverseString":0,"StringUtilsTest::testIsPalindrome":0,"App\\Tests\\CalculatorTest::testAdd":0.007}}

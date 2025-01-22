@@ -33,18 +33,8 @@ jobs:
         run: |
           vendor/bin/phpunit --coverage-clover=coverage.xml --log-junit=junit.xml
 
-      - name: List generated files
-        run: |
-          echo "Listando arquivos no diretório..."
-          ls -la
-
-      - name: Display content of junit.xml and coverage.xml
-        run: |
-          echo "Conteúdo do arquivo junit.xml:"
-          cat junit.xml || echo "junit.xml não encontrado"
-          
-          echo "Conteúdo do arquivo coverage.xml:"
-          cat coverage.xml || echo "coverage.xml não encontrado"
+      - name: Show content of coverage.xml
+        run: cat coverage.xml  # Adicionando para depuração
 
       - name: Generate PR Comment Body
         id: coverage
@@ -76,13 +66,10 @@ jobs:
               TIME=$(xmllint --xpath "string(//testsuites/@time)" junit.xml || echo "0")
           fi
 
-          # Criar o corpo do comentário com todas as métricas
+          # Criar o corpo do comentário
           COMMENT_BODY=$(jq -n --arg coverage "$TOTAL_COVERAGE" --arg total "$TOTAL_TESTS" --arg failures "$FAILURES" --arg skipped "$SKIPPED" --arg time "$TIME" \
           '{"body": "### PHPUnit Test Coverage Report 🚀\n\n- **Total Coverage:** \($coverage)%\n- **Total Tests:** \($total)\n- **Failures:** \($failures)\n- **Skipped:** \($skipped)\n- **Execution Time:** \($time) seconds\n"}')
 
-          # Exibir o conteúdo do comentário antes de enviá-lo
-          echo "Comment Body: $COMMENT_BODY"
-          
           echo "$COMMENT_BODY" > comment.json
 
       - name: Post comment on PR
@@ -90,23 +77,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
-          # Log para verificar URL da PR
-          echo "PR URL: ${{ github.event.pull_request.comments_url }}"
-          
-          # Exibir o conteúdo de comment.json antes de fazer o POST
-          cat comment.json
-          
-          # Tentar postar o comentário
-          RESPONSE=$(curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
+          curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
           -H "Content-Type: application/json" \
           -d @comment.json \
-          "${{ github.event.pull_request.comments_url }}" -s -w "%{http_code}")
-
-          echo "API Response: $RESPONSE"
-
-          # Verificar código HTTP de resposta
-          HTTP_CODE=$(echo $RESPONSE | tail -n1)
-          if [[ "$HTTP_CODE" -ne 201 ]]; then
-            echo "Falha ao postar o comentário. Código HTTP: $HTTP_CODE"
-            exit 1
-          fi
+          "${{ github.event.pull_request.comments_url }}"
