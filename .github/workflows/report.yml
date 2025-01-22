@@ -14,52 +14,50 @@ jobs:
       - name: Fetch all commits
         run: git fetch --prune --unshallow
 
-      - name: Get commits for PR
+      - name: Generate formatted commit report
         run: |
-          echo "### Commit Report for PR #${{ github.event.pull_request.number }}" > commit_report.txt
-          echo "===================================" >> commit_report.txt
-          echo "This report contains all commits and their changes in PR #${{ github.event.pull_request.number }}." >> commit_report.txt
+          echo "# Commit Report for PR #${{ github.event.pull_request.number }}" > commit_report.txt
+          echo "---" >> commit_report.txt
           echo "" >> commit_report.txt
-          
-          # Obtém a base da PR (o commit anterior ao primeiro commit da PR) e o commit da PR
-          BASE_SHA=$(git merge-base origin/main HEAD)  # Assumindo que 'main' seja a branch base
-          
-          # Gera o relatório de commits da PR, entre a base e o HEAD da PR
-          echo "#### Commits in this PR:" >> commit_report.txt
+
+          echo "## Summary" >> commit_report.txt
+          echo "This report contains all commits and their associated changes for **PR #${{ github.event.pull_request.number}}**. Below you will find a list of commits and a detailed summary of what was changed." >> commit_report.txt
           echo "" >> commit_report.txt
-          git log $BASE_SHA..HEAD --oneline --pretty=format:"%h - %an, %ar : %s" >> commit_report.txt
+          echo "---" >> commit_report.txt
           echo "" >> commit_report.txt
-          echo "===================================" >> commit_report.txt
-          echo "#### Commit Changes:" >> commit_report.txt
+
+          echo "## Commits in this PR:" >> commit_report.txt
+          BASE_SHA=$(git merge-base origin/main HEAD)
+          git log $BASE_SHA..HEAD --oneline --pretty=format:"- **[%h]** %an, %ar: %s" >> commit_report.txt
           echo "" >> commit_report.txt
-          # Para cada commit da PR, adicionar o diff correspondente
+          echo "---" >> commit_report.txt
+          echo "" >> commit_report.txt
+
+          echo "## Detailed Changes:" >> commit_report.txt
           git log $BASE_SHA..HEAD --oneline --pretty=format:"%h" | while read commit_hash; do
-            echo "##### Changes for commit $commit_hash:" >> commit_report.txt
-            git show --stat $commit_hash >> commit_report.txt
+            COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s" $commit_hash)
+            echo "### Commit **[$commit_hash]** - $COMMIT_MESSAGE" >> commit_report.txt
+            git show --stat $commit_hash | tail -n +2 | sed 's/^/    /' >> commit_report.txt
             echo "" >> commit_report.txt
-            echo "-----------------------------------" >> commit_report.txt
+            echo "---" >> commit_report.txt
+            echo "" >> commit_report.txt
           done
-          echo "===================================" >> commit_report.txt
+
           echo "### End of Commit Report" >> commit_report.txt
           echo "" >> commit_report.txt
-          
-          # Link para o download do artefato
-          echo "You can download the full report from the artifact section in [this link](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})." >> commit_report.txt
-          cat commit_report.txt  # Exibe o conteúdo do arquivo gerado para debug
-      - name: Upload commit report
+
+      - name: Upload commit report as artifact
         uses: actions/upload-artifact@v4
         with:
           name: commit-report
           path: commit_report.txt
 
-      - name: Create comment on PR
-        if: github.event.pull_request
-        run: |
-          # Get the PR number
-          PR_NUMBER=${{ github.event.pull_request.number }}
-          # Read the commit report content
-          REPORT_CONTENT=$(cat commit_report.txt)
-          # Use GitHub CLI to create a comment on the PR
-          gh pr comment $PR_NUMBER --body "$REPORT_CONTENT"
+      - name: Post comment with download link
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          REPO_URL="https://github.com/${{ github.repository }}"
+          ARTIFACT_URL="$REPO_URL/actions/runs/${{ github.run_id }}"
+          COMMENT_BODY="### 📄 Commit Report for PR #${PR_NUMBER}\n\nYou can download the commit report [here]($ARTIFACT_URL)."
+          gh pr comment $PR_NUMBER --body "$COMMENT_BODY"
