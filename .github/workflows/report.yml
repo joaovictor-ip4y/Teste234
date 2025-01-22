@@ -11,6 +11,9 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v2
 
+      - name: Fetch all commits
+        run: git fetch --prune --unshallow
+
       - name: Get all commits
         run: |
           echo "Commit Report" > commit_report.txt
