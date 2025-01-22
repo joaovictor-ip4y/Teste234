@@ -48,6 +48,8 @@ jobs:
           FAILURES=$(xmllint --xpath "string(//testsuite/@failures)" junit.xml)
           SKIPPED=$(xmllint --xpath "string(//testsuite/@skipped)" junit.xml)
           TIME=$(xmllint --xpath "string(//testsuite/@time)" junit.xml)
+          
+          # Extrair cobertura do arquivo coverage.xml
           COVERAGE=$(php -r "
               libxml_use_internal_errors(true);
               \$xml = simplexml_load_file('coverage.xml');
@@ -71,7 +73,7 @@ jobs:
       - name: Post comment on PR
         if: ${{ github.event_name == 'pull_request' }}
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}  # Use o seu token aqui
           COVERAGE: ${{ env.coverage }}
           TESTS: ${{ env.tests }}
           FAILURES: ${{ env.failures }}
