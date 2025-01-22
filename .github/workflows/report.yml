@@ -1,0 +1,38 @@
+name: Commit Report
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  commit_report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+
+      - name: Get all commits
+        run: |
+          echo "Commit Report" > commit_report.txt
+          echo "================" >> commit_report.txt
+          git log --oneline --pretty=format:"%h - %an, %ar : %s" | sort | uniq >> commit_report.txt
+
+      - name: Upload commit report
+        uses: actions/upload-artifact@v2
+        with:
+          name: commit-report
+          path: commit_report.txt
+
+      - name: Create comment on PR
+        if: github.event.pull_request
+        run: |
+          # Get the PR number
+          PR_NUMBER=${{ github.event.pull_request.number }}
+
+          # Read the commit report content
+          REPORT_CONTENT=$(cat commit_report.txt)
+
+          # Use GitHub CLI to create a comment on the PR
+          gh pr comment $PR_NUMBER --body "$REPORT_CONTENT"
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
