@@ -1,4 +1,4 @@
-name: PHPUnit with Coverage and PR Comments
+name: Run PHPUnit with Coverage and PR Comments
 
 on:
   push:
@@ -24,55 +24,65 @@ jobs:
           php-version: '8.3'
           extensions: xdebug
 
-      # Instalação do xmllint
-      - name: Install xmllint
-        run: sudo apt-get update && sudo apt-get install -y libxml2-utils
-
       # Instalação das dependências do Composer
       - name: Install dependencies
         run: |
           composer install
 
-      # Executa os testes PHPUnit com cobertura e logs
-      - name: Run PHPUnit tests with coverage and log
+      # Executa os testes PHPUnit com cobertura
+      - name: Run PHPUnit tests with coverage
         run: |
-          vendor/bin/phpunit --coverage-clover=coverage.xml --log-junit=junit.xml
+          vendor/bin/phpunit --log-junit=junit.xml --coverage-clover=coverage.xml
 
-      # Processa métricas e gera o comentário para a PR
-      - name: Generate PR Comment Body
-        id: coverage
+      # Extrair dados de cobertura e resultados dos testes
+      - name: Extract test results and coverage
         run: |
-          # Extrair cobertura total
-          TOTAL_COVERAGE=$(php -r "
+          # Extrair dados do junit.xml
+          TESTS=$(xmllint --xpath "string(//testsuite/@tests)" junit.xml)
+          FAILURES=$(xmllint --xpath "string(//testsuite/@failures)" junit.xml)
+          SKIPPED=$(xmllint --xpath "string(//testsuite/@skipped)" junit.xml)
+          TIME=$(xmllint --xpath "string(//testsuite/@time)" junit.xml)
+          COVERAGE=$(php -r "
               libxml_use_internal_errors(true);
               \$xml = simplexml_load_file('coverage.xml');
               if (\$xml === false) {
                   echo 'Erro ao carregar o arquivo coverage.xml';
                   exit(1);
               }
+              // Calcula a cobertura como (coveredelements / elements) * 100
               \$coverage = (\$xml->project->metrics['coveredelements'] / \$xml->project->metrics['elements']) * 100;
               echo \$coverage;
           ")
+          
+          # Definir variáveis de ambiente
+          echo "tests=$TESTS" >> $GITHUB_ENV
+          echo "failures=$FAILURES" >> $GITHUB_ENV
+          echo "skipped=$SKIPPED" >> $GITHUB_ENV
+          echo "time=$TIME" >> $GITHUB_ENV
+          echo "coverage=$COVERAGE" >> $GITHUB_ENV
 
-          # Extrair métricas do arquivo junit.xml
-          TOTAL_TESTS=$(xmllint --xpath "string(//testsuites/@tests)" junit.xml)
-          FAILURES=$(xmllint --xpath "string(//testsuites/@failures)" junit.xml)
-          SKIPPED=$(xmllint --xpath "string(//testsuites/@skipped)" junit.xml)
-          TIME=$(xmllint --xpath "string(//testsuites/@time)" junit.xml)
-
-          # Criar o corpo do comentário
-          COMMENT_BODY=$(jq -n --arg coverage "$TOTAL_COVERAGE" --arg total "$TOTAL_TESTS" --arg failures "$FAILURES" --arg skipped "$SKIPPED" --arg time "$TIME" \
-          '{"body": "### PHPUnit Test Coverage Report 🚀\n\n- **Total Coverage:** \($coverage)%\n- **Total Tests:** \($total)\n- **Failures:** \($failures)\n- **Skipped:** \($skipped)\n- **Execution Time:** \($time) seconds\n"}')
-
-          echo "$COMMENT_BODY" > comment.json
-
-      # Postar o comentário na PR
+      # Adicionar comentário na PR com o resultado dos testes e cobertura
       - name: Post comment on PR
         if: ${{ github.event_name == 'pull_request' }}
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          COVERAGE: ${{ env.coverage }}
+          TESTS: ${{ env.tests }}
+          FAILURES: ${{ env.failures }}
+          SKIPPED: ${{ env.skipped }}
+          TIME: ${{ env.time }}
         run: |
+          COMMENT_BODY="### PHPUnit Test Results 🚀\n\n
+          - **Total Tests:** $TESTS\n
+          - **Failures:** $FAILURES\n
+          - **Skipped:** $SKIPPED\n
+          - **Execution Time:** $TIME seconds\n
+          - **Coverage:** $COVERAGE%\n"
+          
+          echo "Comment Body: $COMMENT_BODY"
+
+          # Postar o comentário na PR
           curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
           -H "Content-Type: application/json" \
-          -d @comment.json \
-          "${{ github.event.pull_request.comments_url }}"
+          -d "$(jq -n --arg body "$COMMENT_BODY" '{body: $body}')" \
+          "${{ github.event.pull_request.url }}/comments"
