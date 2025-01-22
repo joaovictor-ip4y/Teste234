@@ -1,5 +1,4 @@
 <?php
-// src/Calculator.php
 
 namespace App;
 
@@ -23,7 +22,7 @@ class Calculator
     public function divide($a, $b)
     {
         if ($b == 0) {
-            throw new \Exception("Cannot divide by zero");
+            throw new \DivisionByZeroError("Cannot divide by zero.");
         }
         return $a / $b;
     }
