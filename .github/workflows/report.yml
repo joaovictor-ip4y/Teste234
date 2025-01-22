@@ -14,12 +14,13 @@ jobs:
       - name: Fetch all commits
         run: git fetch --prune --unshallow
 
-      - name: Get all commits
+      - name: Generate commit report
         run: |
           echo "Commit Report" > commit_report.txt
           echo "================" >> commit_report.txt
           git log --oneline --pretty=format:"%h - %an, %ar : %s" | sort | uniq >> commit_report.txt
           echo "End of Commit Report" >> commit_report.txt
+          cat commit_report.txt  # Exibe o conteúdo do arquivo gerado para debug
 
       - name: Upload commit report
         uses: actions/upload-artifact@v3
