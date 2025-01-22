@@ -21,50 +21,38 @@ jobs:
           echo "This report contains all commits and their changes in PR #${{ github.event.pull_request.number }}." >> commit_report.txt
           echo "" >> commit_report.txt
           
-          # Obtém a base da PR (o commit anterior ao primeiro commit da PR) e o commit da PR
-          BASE_SHA=$(git merge-base origin/main HEAD)  # Assumindo que 'main' seja a branch base
+          BASE_SHA=$(git merge-base origin/main HEAD)
           
-          # Gera o relatório de commits da PR, entre a base e o HEAD da PR
           echo "#### Commits in this PR:" >> commit_report.txt
           echo "" >> commit_report.txt
           git log $BASE_SHA..HEAD --oneline --pretty=format:"%h - %an, %ar : %s" >> commit_report.txt
           echo "" >> commit_report.txt
+
           echo "===================================" >> commit_report.txt
           echo "#### Commit Changes:" >> commit_report.txt
           echo "" >> commit_report.txt
-
-          # Para cada commit da PR, adicionar o diff correspondente
           git log $BASE_SHA..HEAD --oneline --pretty=format:"%h" | while read commit_hash; do
             echo "##### Changes for commit $commit_hash:" >> commit_report.txt
             git show --stat $commit_hash >> commit_report.txt
             echo "" >> commit_report.txt
-            echo "-----------------------------------" >> commit_report.txt
           done
 
           echo "===================================" >> commit_report.txt
           echo "### End of Commit Report" >> commit_report.txt
           echo "" >> commit_report.txt
-          
-          # Link para o download do artefato
-          echo "You can download the full report from [this link](https://github.com/${{ github.repository }}/suites/${{ github.run_id }}/artifacts/commit-report)." >> commit_report.txt
-          cat commit_report.txt  # Exibe o conteúdo do arquivo gerado para debug
 
-      - name: Upload commit report
-        uses: actions/upload-artifact@v4
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
         with:
-          name: commit-report
-          path: commit_report.txt
+          files: commit_report.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create comment on PR
         if: github.event.pull_request
         run: |
-          # Get the PR number
           PR_NUMBER=${{ github.event.pull_request.number }}
-
-          # Read the commit report content
           REPORT_CONTENT=$(cat commit_report.txt)
-
-          # Use GitHub CLI to create a comment on the PR
           gh pr comment $PR_NUMBER --body "$REPORT_CONTENT"
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
