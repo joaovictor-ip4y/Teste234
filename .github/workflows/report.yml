@@ -41,16 +41,19 @@ jobs:
           echo "### End of Commit Report" >> commit_report.txt
           echo "" >> commit_report.txt
 
+      - name: Remove existing remote tag if exists
+        run: |
+          TAG_NAME="pr-${{ github.event.pull_request.number }}-report"
+          echo "Deleting remote tag $TAG_NAME if it exists"
+          git fetch --tags
+          git tag -d $TAG_NAME || echo "No local tag to delete."
+          git push --delete origin $TAG_NAME || echo "No remote tag to delete."
+
       - name: Create tag for release
         run: |
           TAG_NAME="pr-${{ github.event.pull_request.number }}-report"
-          # Verifica se a tag já existe remotamente, se não, cria a tag
-          if ! git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
-            git tag $TAG_NAME
-            git push origin $TAG_NAME
-          else
-            echo "Tag $TAG_NAME already exists, skipping tag creation."
-          fi
+          git tag $TAG_NAME
+          git push origin $TAG_NAME
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
