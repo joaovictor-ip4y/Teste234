@@ -90,7 +90,7 @@ jobs:
           echo "Comment Body: $COMMENT_BODY"
 
           # Postar o comentário na PR
-          curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
+          curl -X POST -H "Authorization: token $PAT_TOKEN" \
           -H "Content-Type: application/json" \
           -d "$(jq -n --arg body "$COMMENT_BODY" '{body: $body}')" \
           "${{ github.event.pull_request.url }}/comments"
