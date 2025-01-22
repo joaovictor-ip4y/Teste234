@@ -51,8 +51,6 @@ jobs:
           if (( $(echo "$COVERAGE < 60" | bc -l) )); then
               echo "Cobertura abaixo de 60%: $COVERAGE%"
               exit 1
-          else
-              echo "Cobertura OK: $COVERAGE%"
           fi
 
       # Extrair métricas do arquivo junit.xml
@@ -78,7 +76,7 @@ jobs:
 
       # Postar o comentário na PR
       - name: Post comment on PR
-        if: ${{ github.event_name == 'pull_request' }}
+        if: ${{ always() }} # Sempre executa, mesmo que etapas anteriores falhem
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
