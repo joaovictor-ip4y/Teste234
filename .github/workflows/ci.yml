@@ -34,6 +34,17 @@ jobs:
         run: |
           vendor/bin/phpunit --coverage-clover=coverage.xml --log-junit=junit.xml
 
+      # Verificar se os arquivos foram gerados corretamente
+      - name: Debug coverage.xml and junit.xml content
+        run: |
+          echo "Verificando se coverage.xml existe:"
+          ls -l coverage.xml || echo "coverage.xml não encontrado"
+          cat coverage.xml || echo "Conteúdo de coverage.xml não encontrado"
+
+          echo "Verificando se junit.xml existe:"
+          ls -l junit.xml || echo "junit.xml não encontrado"
+          cat junit.xml || echo "Conteúdo de junit.xml não encontrado"
+
       # Verificar a cobertura do código
       - name: Check coverage
         id: coverage
