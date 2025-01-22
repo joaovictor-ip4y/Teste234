@@ -29,6 +29,12 @@ jobs:
         run: |
           composer install
 
+      # Instalar xmllint para extrair dados do junit.xml
+      - name: Install xmllint
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxml2-utils
+
       # Executa os testes PHPUnit com cobertura
       - name: Run PHPUnit tests with coverage
         run: |
