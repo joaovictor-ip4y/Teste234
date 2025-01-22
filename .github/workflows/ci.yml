@@ -1,9 +1,6 @@
-name: Run PHPUnit with Coverage
+name: PHPUnit with Coverage Check
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
@@ -26,16 +23,16 @@ jobs:
 
       # Instalação das dependências do Composer
       - name: Install dependencies
-        run: |
-          composer install
+        run: composer install
 
-      # Executa os testes PHPUnit
+      # Executa os testes PHPUnit com cobertura
       - name: Run PHPUnit tests with coverage
         run: |
           vendor/bin/phpunit --coverage-clover=coverage.xml --log-junit=junit.xml
 
-      # Verificar a cobertura do código e postar o comentário
-      - name: Check coverage and post comment
+      # Extrair cobertura do arquivo coverage.xml
+      - name: Extract coverage
+        id: coverage_check
         run: |
           COVERAGE=$(php -r "
               libxml_use_internal_errors(true);
@@ -44,23 +41,59 @@ jobs:
                   echo 'Erro ao carregar o arquivo coverage.xml';
                   exit(1);
               }
-              // Calcula a cobertura como (coveredelements / elements) * 100
               \$coverage = (\$xml->project->metrics['coveredelements'] / \$xml->project->metrics['elements']) * 100;
-              echo \$coverage;
+              echo round(\$coverage, 2);
+          ")
+          echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
+          echo "Cobertura calculada: $COVERAGE%"
+
+      # Parse junit.xml para obter dados adicionais
+      - name: Parse junit.xml
+        id: parse_junit
+        run: |
+          TESTS=$(php -r "
+              \$xml = simplexml_load_file('junit.xml');
+              echo (int) \$xml->testsuite['tests'];
+          ")
+          FAILURES=$(php -r "
+              \$xml = simplexml_load_file('junit.xml');
+              echo (int) \$xml->testsuite['failures'];
+          ")
+          SKIPPED=$(php -r "
+              \$xml = simplexml_load_file('junit.xml');
+              echo (int) \$xml->testsuite['skipped'];
+          ")
+          TIME=$(php -r "
+              \$xml = simplexml_load_file('junit.xml');
+              echo (float) \$xml->testsuite['time'];
           ")
 
-          # Definir variáveis de cobertura
-          echo "Cobertura de código: $COVERAGE%"
+          echo "total_tests=$TESTS" >> $GITHUB_ENV
+          echo "failures=$FAILURES" >> $GITHUB_ENV
+          echo "skipped=$SKIPPED" >> $GITHUB_ENV
+          echo "execution_time=$TIME" >> $GITHUB_ENV
 
-          # Formatar o comentário
-          COMMENT="### PHPUnit Test Coverage Report 🚀\n\n- **Total Coverage:** $COVERAGE%\n"
+      # Comentar resultados na PR
+      - name: Post test results
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          repository: ${{ github.repository }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ### PHPUnit Test Coverage Report 🚀
 
-          # Caso a cobertura seja menor que 60%, bloqueia e comenta
-          if (( $(echo "$COVERAGE < 60" | bc -l) )); then
-              COMMENT+="- **Coverage is below 60%**: $COVERAGE%\n\nPlease improve your test coverage!"
-              echo "$COMMENT" | gh pr comment ${{ github.event.pull_request.number }} --body
+            - **Total Coverage:** ${{ env.COVERAGE }}%
+            - **Total Tests:** ${{ env.total_tests }}
+            - **Failures:** ${{ env.failures }}
+            - **Skipped:** ${{ env.skipped }}
+            - **Execution Time:** ${{ env.execution_time }} seconds
+
+      # Validar cobertura (bloqueio se menor que 60%)
+      - name: Validate coverage threshold
+        if: always() # Executa mesmo que passos anteriores falhem
+        run: |
+          if [ $(echo "${{ env.COVERAGE }} < 60" | bc) -eq 1 ]; then
+              echo "Cobertura abaixo do limite mínimo: ${{ env.COVERAGE }}%"
               exit 1
-          else
-              COMMENT+="- **Coverage is OK!**"
-              echo "$COMMENT" | gh pr comment ${{ github.event.pull_request.number }} --body
           fi
