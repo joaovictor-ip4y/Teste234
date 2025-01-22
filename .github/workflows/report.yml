@@ -21,53 +21,45 @@ jobs:
           echo "This report contains all commits and their changes in PR #${{ github.event.pull_request.number }}." >> commit_report.txt
           echo "" >> commit_report.txt
           
-          BASE_SHA=$(git merge-base origin/main HEAD)
+          # Obtém a base da PR (o commit anterior ao primeiro commit da PR) e o commit da PR
+          BASE_SHA=$(git merge-base origin/main HEAD)  # Assumindo que 'main' seja a branch base
           
+          # Gera o relatório de commits da PR, entre a base e o HEAD da PR
           echo "#### Commits in this PR:" >> commit_report.txt
           echo "" >> commit_report.txt
           git log $BASE_SHA..HEAD --oneline --pretty=format:"%h - %an, %ar : %s" >> commit_report.txt
           echo "" >> commit_report.txt
-
           echo "===================================" >> commit_report.txt
           echo "#### Commit Changes:" >> commit_report.txt
           echo "" >> commit_report.txt
+          # Para cada commit da PR, adicionar o diff correspondente
           git log $BASE_SHA..HEAD --oneline --pretty=format:"%h" | while read commit_hash; do
             echo "##### Changes for commit $commit_hash:" >> commit_report.txt
             git show --stat $commit_hash >> commit_report.txt
             echo "" >> commit_report.txt
+            echo "-----------------------------------" >> commit_report.txt
           done
-
           echo "===================================" >> commit_report.txt
           echo "### End of Commit Report" >> commit_report.txt
           echo "" >> commit_report.txt
-
-      - name: Remove existing remote tag if exists
-        run: |
-          TAG_NAME="pr-${{ github.event.pull_request.number }}-report"
-          echo "Deleting remote tag $TAG_NAME if it exists"
-          git fetch --tags
-          git tag -d $TAG_NAME || echo "No local tag to delete."
-          git push --delete origin $TAG_NAME || echo "No remote tag to delete."
-
-      - name: Create tag for release
-        run: |
-          TAG_NAME="pr-${{ github.event.pull_request.number }}-report"
-          git tag $TAG_NAME
-          git push origin $TAG_NAME
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
+          
+          # Link para o download do artefato
+          echo "You can download the full report from the artifact section in [this link](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})." >> commit_report.txt
+          cat commit_report.txt  # Exibe o conteúdo do arquivo gerado para debug
+      - name: Upload commit report
+        uses: actions/upload-artifact@v4
         with:
-          files: commit_report.txt
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: commit-report
+          path: commit_report.txt
 
-      - name: Create comment on PR with download link
+      - name: Create comment on PR
         if: github.event.pull_request
         run: |
+          # Get the PR number
           PR_NUMBER=${{ github.event.pull_request.number }}
-          RELEASE_URL="https://github.com/${{ github.repository }}/releases/tag/pr-${{ github.event.pull_request.number }}-report"
-          COMMENT_BODY="The commit report for this PR is available for download: $RELEASE_URL"
-          gh pr comment $PR_NUMBER --body "$COMMENT_BODY"
+          # Read the commit report content
+          REPORT_CONTENT=$(cat commit_report.txt)
+          # Use GitHub CLI to create a comment on the PR
+          gh pr comment $PR_NUMBER --body "$REPORT_CONTENT"
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
