@@ -44,7 +44,9 @@ jobs:
           echo "===================================" >> commit_report.txt
           echo "### End of Commit Report" >> commit_report.txt
           echo "" >> commit_report.txt
-          echo "You can download the full report [here](https://github.com/${{ github.repository }}/suites/${{ github.run_id }}/artifacts)." >> commit_report.txt
+          
+          # Link para o download do artefato
+          echo "You can download the full report from the artifact section in [this link](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})." >> commit_report.txt
           cat commit_report.txt  # Exibe o conteúdo do arquivo gerado para debug
 
       - name: Upload commit report
