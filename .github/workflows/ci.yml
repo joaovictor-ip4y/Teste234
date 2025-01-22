@@ -54,6 +54,7 @@ jobs:
           # Verifica se a cobertura está abaixo de 60% e exibe uma mensagem de advertência
           if (( $(echo "$COVERAGE < 60" | bc -l) )); then
               echo "Cobertura abaixo de 60%: $COVERAGE%"
+              echo "exit 1" >> $GITHUB_ENV # Bloqueia o PR se a cobertura for inferior a 60%
           else
               echo "Cobertura OK: $COVERAGE%"
           fi
@@ -83,3 +84,10 @@ jobs:
           -H "Content-Type: application/json" \
           -d @comment.json \
           "${{ github.event.pull_request.comments_url }}"
+          
+      # Bloquear o merge se a cobertura for inferior a 60%
+      - name: Block merge if coverage < 60
+        if: env.exit == '1'
+        run: |
+          echo "Cobertura de testes abaixo de 60%, bloqueando o merge!"
+          exit 1
