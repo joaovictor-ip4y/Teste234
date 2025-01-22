@@ -41,12 +41,6 @@ jobs:
           echo "### End of Commit Report" >> commit_report.txt
           echo "" >> commit_report.txt
 
-      - name: Delete existing tag if exists
-        run: |
-          TAG_NAME="pr-${{ github.event.pull_request.number }}-report"
-          git tag -d $TAG_NAME || true  # Deleta a tag localmente se ela existir
-          git push --delete origin $TAG_NAME || true  # Deleta a tag remota se ela existir
-
       - name: Create tag for release
         run: |
           TAG_NAME="pr-${{ github.event.pull_request.number }}-report"
