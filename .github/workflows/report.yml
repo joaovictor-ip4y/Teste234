@@ -1,59 +1,27 @@
-name: Commit Report
+### Commit Report for PR #123
+===================================
+This report contains all commits and their changes in PR #123.
 
-on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+#### Commits in this PR:
 
-jobs:
-  commit_report:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v2
+a1b2c3d - João Victor, 2 hours ago : Fix bug in login system
+f4e5d6f - João Victor, 3 hours ago : Update documentation
 
-      - name: Fetch all commits
-        run: git fetch --prune --unshallow
+===================================
+#### Commit Changes:
 
-      - name: Get commits for PR
-        run: |
-          echo "Commit Report for PR #${{ github.event.pull_request.number }}" > commit_report.txt
-          echo "================" >> commit_report.txt
-          
-          # Obtém a base da PR (o commit anterior ao primeiro commit da PR) e o commit da PR
-          BASE_SHA=$(git merge-base origin/main HEAD)  # Assumindo que 'main' seja a branch base
-          
-          # Gera o relatório de commits da PR, entre a base e o HEAD da PR
-          git log $BASE_SHA..HEAD --oneline --pretty=format:"%h - %an, %ar : %s" >> commit_report.txt
-          echo "================" >> commit_report.txt
-          echo "Commit Changes:" >> commit_report.txt
-          echo "================" >> commit_report.txt
+##### Changes for commit a1b2c3d:
+file1.php | 10 +++++++-----
+file2.php | 5 +++++
+-----------------------------------
+2 files changed, 15 insertions(+), 5 deletions(-)
 
-          # Para cada commit da PR, adicionar o diff correspondente
-          git log $BASE_SHA..HEAD --oneline --pretty=format:"%h" | while read commit_hash; do
-            echo "Changes for commit $commit_hash:" >> commit_report.txt
-            git show --stat $commit_hash >> commit_report.txt
-            echo "================" >> commit_report.txt
-          done
+##### Changes for commit f4e5d6f:
+README.md | 3 +++
+-----------------------------------
+1 file changed, 3 insertions(+)
 
-          echo "End of Commit Report" >> commit_report.txt
-          cat commit_report.txt  # Exibe o conteúdo do arquivo gerado para debug
+===================================
+### End of Commit Report
 
-      - name: Upload commit report
-        uses: actions/upload-artifact@v4
-        with:
-          name: commit-report
-          path: commit_report.txt
-
-      - name: Create comment on PR
-        if: github.event.pull_request
-        run: |
-          # Get the PR number
-          PR_NUMBER=${{ github.event.pull_request.number }}
-
-          # Read the commit report content
-          REPORT_CONTENT=$(cat commit_report.txt)
-
-          # Use GitHub CLI to create a comment on the PR
-          gh pr comment $PR_NUMBER --body "$REPORT_CONTENT"
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+You can download the full report [here](https://github.com/your-org/your-repo/suites/12345678/artifacts).
