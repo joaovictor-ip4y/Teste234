@@ -34,10 +34,11 @@ jobs:
         run: |
           vendor/bin/phpunit --coverage-clover=coverage.xml --log-junit=junit.xml
 
-      # Verificar e postar cobertura, permitindo falhas no teste
+      # Verifica cobertura e posta comentário
       - name: Post Coverage Result
-        if: always()  # Isso garante que o comentário será postado, mesmo com falha
+        if: always()  # Garante que o comentário será postado, mesmo com falha
         run: |
+          # Calcula a cobertura de código
           COVERAGE=$(php -r "
               libxml_use_internal_errors(true);
               \$xml = simplexml_load_file('coverage.xml');
@@ -49,17 +50,29 @@ jobs:
               \$coverage = (\$xml->project->metrics['coveredelements'] / \$xml->project->metrics['elements']) * 100;
               echo \$coverage;
           ")
-          
-          # Criar o comentário
+
+          # Garante que o código será barrado se a cobertura for menor que 60%
+          if (( $(echo "$COVERAGE < 60" | bc -l) )); then
+            echo "Cobertura abaixo de 60%, barrando execução!";
+            exit 1;
+          fi
+
+          # Extração de dados do JUnit para comentários
+          TESTS=$(grep -o 'tests="[^"]*' junit.xml | head -n 1 | sed 's/tests="//')
+          FAILURES=$(grep -o 'failures="[^"]*' junit.xml | head -n 1 | sed 's/failures="//')
+          SKIPPED=$(grep -o 'skipped="[^"]*' junit.xml | head -n 1 | sed 's/skipped="//')
+          EXECUTION_TIME=$(grep -o 'time="[^"]*' junit.xml | head -n 1 | sed 's/time="//')
+
+          # Criação do comentário
           COMMENT="### PHPUnit Test Coverage Report 🚀
           - **Total Coverage:** \$COVERAGE%
-          - **Total Tests:** $(grep -o 'tests="[^"]*' junit.xml | head -n 1 | sed 's/tests="//')
-          - **Failures:** $(grep -o 'failures="[^"]*' junit.xml | head -n 1 | sed 's/failures="//')
-          - **Skipped:** $(grep -o 'skipped="[^"]*' junit.xml | head -n 1 | sed 's/skipped="//')
-          - **Execution Time:** $(grep -o 'time="[^"]*' junit.xml | head -n 1 | sed 's/time="//')
+          - **Total Tests:** \$TESTS
+          - **Failures:** \$FAILURES
+          - **Skipped:** \$SKIPPED
+          - **Execution Time:** \$EXECUTION_TIME seconds
           
           "
-          
+
           # Postar o comentário no PR
           curl -H "Authorization: token ${{ secrets.PAT_TOKEN }}" -X POST \
             -d "{\"body\": \"$COMMENT\"}" \
