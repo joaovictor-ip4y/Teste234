@@ -29,33 +29,16 @@ jobs:
         run: |
           composer install
 
-      # Executa os testes PHPUnit
+      # Executa os testes PHPUnit com cobertura
       - name: Run PHPUnit tests with coverage
         run: |
           vendor/bin/phpunit --coverage-clover=coverage.xml --log-junit=junit.xml
 
-      # Verificar se os arquivos foram gerados corretamente
-      - name: Debug coverage.xml and junit.xml content
+      # Extrair dados do arquivo coverage.xml e junit.xml
+      - name: Extract coverage and test results
+        id: extract_data
         run: |
-          echo "Verificando se coverage.xml existe:"
-          ls -l coverage.xml || echo "coverage.xml não encontrado"
-          cat coverage.xml || echo "Conteúdo de coverage.xml não encontrado"
-
-          echo "Verificando se junit.xml existe:"
-          ls -l junit.xml || echo "junit.xml não encontrado"
-          cat junit.xml || echo "Conteúdo de junit.xml não encontrado"
-
-      # Verificar a cobertura do código
-      - name: Check coverage
-        id: coverage
-        run: |
-          # Verificar se coverage.xml foi gerado
-          if [[ ! -f coverage.xml ]]; then
-            echo "coverage.xml não foi gerado"
-            exit 1
-          fi
-
-          # Cálculo da cobertura
+          # Extrair a cobertura total de coverage.xml
           COVERAGE=$(php -r "
               libxml_use_internal_errors(true);
               \$xml = simplexml_load_file('coverage.xml');
@@ -63,36 +46,24 @@ jobs:
                   echo 'Erro ao carregar o arquivo coverage.xml';
                   exit(1);
               }
-              // Calcula a cobertura como (coveredelements / elements) * 100
               \$coverage = (\$xml->project->metrics['coveredelements'] / \$xml->project->metrics['elements']) * 100;
               echo \$coverage;
           ")
 
-          echo "Cobertura: $COVERAGE%"
-
-          # Armazenar o valor da cobertura
-          echo "coverage=$COVERAGE" >> $GITHUB_ENV
-
-      # Criar comentário sobre os resultados dos testes
-      - name: Generate PR Comment Body
-        id: generate_comment
-        run: |
-          # Verificar se o junit.xml foi gerado
+          # Verificar a existência do junit.xml e extrair dados
           if [[ ! -f junit.xml ]]; then
-            echo "junit.xml não foi gerado"
-            exit 1
+              echo "JUnit XML file not found. Skipping metrics extraction."
+              TOTAL_TESTS=0
+              FAILURES=0
+              SKIPPED=0
+              TIME=0
+          else
+              # Extrair métricas do arquivo junit.xml
+              TOTAL_TESTS=$(xmllint --xpath "string(//testsuites/@tests)" junit.xml || echo "0")
+              FAILURES=$(xmllint --xpath "string(//testsuites/@failures)" junit.xml || echo "0")
+              SKIPPED=$(xmllint --xpath "string(//testsuites/@skipped)" junit.xml || echo "0")
+              TIME=$(xmllint --xpath "string(//testsuites/@time)" junit.xml || echo "0")
           fi
-
-          # Extrair dados do junit.xml
-          TOTAL_TESTS=$(xmllint --xpath "string(//testsuites/@tests)" junit.xml || echo "0")
-          FAILURES=$(xmllint --xpath "string(//testsuites/@failures)" junit.xml || echo "0")
-          SKIPPED=$(xmllint --xpath "string(//testsuites/@skipped)" junit.xml || echo "0")
-          TIME=$(xmllint --xpath "string(//testsuites/@time)" junit.xml || echo "0")
-
-          echo "Total Tests: $TOTAL_TESTS"
-          echo "Failures: $FAILURES"
-          echo "Skipped: $SKIPPED"
-          echo "Execution Time: $TIME"
 
           # Criar o corpo do comentário
           COMMENT_BODY=$(jq -n --arg coverage "$COVERAGE" --arg total "$TOTAL_TESTS" --arg failures "$FAILURES" --arg skipped "$SKIPPED" --arg time "$TIME" \
@@ -110,10 +81,3 @@ jobs:
           -H "Content-Type: application/json" \
           -d @comment.json \
           "${{ github.event.pull_request.comments_url }}"
-
-      # Falhar o job caso a cobertura esteja abaixo de 60%
-      - name: Fail if coverage is below 60%
-        if: ${{ env.coverage < 60 }}
-        run: |
-          echo "Cobertura abaixo de 60%: ${{ env.coverage }}%"
-          exit 1

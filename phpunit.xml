@@ -9,6 +9,10 @@
             <!-- Diretório onde o seu código fonte está localizado -->
             <directory>src</directory>
         </include>
+        <!-- Define o arquivo para salvar o relatório de cobertura -->
+        <report>
+            <clover outputFile="coverage.xml"/>
+        </report>
     </coverage>
 
     <testsuites>
