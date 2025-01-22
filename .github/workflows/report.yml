@@ -18,7 +18,7 @@ jobs:
           git log --oneline --pretty=format:"%h - %an, %ar : %s" | sort | uniq >> commit_report.txt
 
       - name: Upload commit report
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: commit-report
           path: commit_report.txt
