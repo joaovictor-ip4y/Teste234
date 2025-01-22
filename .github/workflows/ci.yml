@@ -1,65 +1,99 @@
-name: CI with Coverage
+name: PHPUnit with Coverage Check
 
 on:
-  push:
-    branches: [ "main" ]
   pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      # Checkout do código
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: '16'
+      # Configuração do PHP
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: xdebug
 
-    - name: Install dependencies
-      run: npm install
+      # Instalação das dependências do Composer
+      - name: Install dependencies
+        run: composer install
 
-    - name: Run tests and generate coverage report
-      run: npm run test -- --coverage --coverageReporters=text-summary
-      continue-on-error: true
-      id: test
+      # Executa os testes PHPUnit com cobertura
+      - name: Run PHPUnit tests with coverage
+        run: |
+          vendor/bin/phpunit --coverage-clover=coverage.xml --log-junit=junit.xml
 
-    - name: Check coverage
-      run: |
-        COVERAGE=$(grep -Po 'All files.*? \K\d+(?=%)' coverage/coverage-summary.txt)
-        if [ "$COVERAGE" -lt 60 ]; then
-          echo "Coverage is below 60%"
-          exit 1
-        fi
-      continue-on-error: true
-      id: coverage
+      # Extrair cobertura do arquivo coverage.xml
+      - name: Extract coverage
+        id: coverage_check
+        run: |
+          COVERAGE=$(php -r "
+              libxml_use_internal_errors(true);
+              \$xml = simplexml_load_file('coverage.xml');
+              if (\$xml === false) {
+                  echo 'Erro ao carregar o arquivo coverage.xml';
+                  exit(1);
+              }
+              \$coverage = (\$xml->project->metrics['coveredelements'] / \$xml->project->metrics['elements']) * 100;
+              echo round(\$coverage, 2);
+          ")
+          echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
+          echo "Cobertura calculada: $COVERAGE%"
 
-    - name: Comment on PR
-      if: failure()
-      uses: actions/github-script@v6
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        script: |
-          const { GITHUB_SHA, GITHUB_REPOSITORY, GITHUB_EVENT_NAME, GITHUB_REF } = process.env;
-          const { context } = require('@actions/github');
+      # Parse junit.xml para obter dados adicionais
+      - name: Parse junit.xml
+        id: parse_junit
+        run: |
+          TESTS=$(php -r "
+              \$xml = simplexml_load_file('junit.xml');
+              echo (int) \$xml->testsuite['tests'];
+          ")
+          FAILURES=$(php -r "
+              \$xml = simplexml_load_file('junit.xml');
+              echo (int) \$xml->testsuite['failures'];
+          ")
+          SKIPPED=$(php -r "
+              \$xml = simplexml_load_file('junit.xml');
+              echo (int) \$xml->testsuite['skipped'];
+          ")
+          TIME=$(php -r "
+              \$xml = simplexml_load_file('junit.xml');
+              echo (float) \$xml->testsuite['time'];
+          ")
 
-          const coverage = require('fs').readFileSync('coverage/coverage-summary.txt', 'utf8').match(/All files.*? (\d+(.\d+)?%)/)[1];
+          echo "total_tests=$TESTS" >> $GITHUB_ENV
+          echo "failures=$FAILURES" >> $GITHUB_ENV
+          echo "skipped=$SKIPPED" >> $GITHUB_ENV
+          echo "execution_time=$TIME" >> $GITHUB_ENV
 
-          const commentBody = `
-            ## Test Coverage Report
-            **Coverage:** ${coverage}
-            **Result:** Coverage is below the required threshold of 60%.
-          `;
+      # Comentar resultados na PR
+      - name: Post test results
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          repository: ${{ github.repository }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ### PHPUnit Test Coverage Report 🚀
 
-          if (GITHUB_EVENT_NAME === 'pull_request') {
-            const { repo, issue } = context;
-            const issue_number = issue.number;
-            await github.rest.issues.createComment({
-              ...repo,
-              issue_number,
-              body: commentBody,
-            });
-          }
+            - **Total Coverage:** ${{ env.COVERAGE }}%
+            - **Total Tests:** ${{ env.total_tests }}
+            - **Failures:** ${{ env.failures }}
+            - **Skipped:** ${{ env.skipped }}
+            - **Execution Time:** ${{ env.execution_time }} seconds
+
+      # Validar cobertura (bloqueio se menor que 60%)
+      - name: Validate coverage threshold
+        if: always() # Executa mesmo que passos anteriores falhem
+        run: |
+          if [ $(echo "${{ env.COVERAGE }} < 60" | bc) -eq 1 ]; then
+              echo "Cobertura abaixo do limite mínimo: ${{ env.COVERAGE }}%"
+              exit 1
+          fi
