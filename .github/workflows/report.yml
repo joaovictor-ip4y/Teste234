@@ -14,45 +14,52 @@ jobs:
       - name: Fetch all commits
         run: git fetch --prune --unshallow
 
-      - name: Generate formatted commit report with changes
+      - name: Generate HTML commit report
         run: |
-          echo "# Commit Report for PR #${{ github.event.pull_request.number }}" > commit_report.txt
-          echo "---" >> commit_report.txt
-          echo "" >> commit_report.txt
+          echo "<!DOCTYPE html>" > commit_report.html
+          echo "<html lang='en'>" >> commit_report.html
+          echo "<head>" >> commit_report.html
+          echo "  <meta charset='UTF-8'>" >> commit_report.html
+          echo "  <meta name='viewport' content='width=device-width, initial-scale=1.0'>" >> commit_report.html
+          echo "  <title>Commit Report</title>" >> commit_report.html
+          echo "  <style>" >> commit_report.html
+          echo "    body { font-family: Arial, sans-serif; line-height: 1.6; margin: 20px; }" >> commit_report.html
+          echo "    h1, h2, h3 { color: #333; }" >> commit_report.html
+          echo "    pre { background-color: #f4f4f4; padding: 10px; border: 1px solid #ddd; overflow-x: auto; }" >> commit_report.html
+          echo "    .commit { margin-bottom: 20px; }" >> commit_report.html
+          echo "    .divider { border-top: 1px solid #ddd; margin: 20px 0; }" >> commit_report.html
+          echo "  </style>" >> commit_report.html
+          echo "</head>" >> commit_report.html
+          echo "<body>" >> commit_report.html
 
-          echo "## Summary" >> commit_report.txt
-          echo "This report contains all commits and their associated changes for **PR #${{ github.event.pull_request.number}}**. Below you will find a list of commits and a detailed summary of what was changed." >> commit_report.txt
-          echo "" >> commit_report.txt
-          echo "---" >> commit_report.txt
-          echo "" >> commit_report.txt
+          echo "<h1>Commit Report for PR #${{ github.event.pull_request.number }}</h1>" >> commit_report.html
+          echo "<p>This report contains all commits and their associated changes for <strong>PR #${{ github.event.pull_request.number }}</strong>.</p>" >> commit_report.html
+          echo "<hr class='divider'>" >> commit_report.html
 
-          echo "## Commits in this PR:" >> commit_report.txt
+          echo "<h2>Commits in this PR:</h2>" >> commit_report.html
           BASE_SHA=$(git merge-base origin/main HEAD)
-          git log $BASE_SHA..HEAD --oneline --pretty=format:"- **[%h]** %an, %ar: %s" >> commit_report.txt
-          echo "" >> commit_report.txt
-          echo "---" >> commit_report.txt
-          echo "" >> commit_report.txt
+          git log $BASE_SHA..HEAD --oneline --pretty=format:"<div class='commit'><h3>Commit [%h]</h3><p><strong>Author:</strong> %an, <strong>Date:</strong> %ar</p><p><strong>Message:</strong> %s</p></div>" >> commit_report.html
 
-          echo "## Detailed Changes:" >> commit_report.txt
+          echo "<hr class='divider'>" >> commit_report.html
+          echo "<h2>Detailed Changes:</h2>" >> commit_report.html
           git log $BASE_SHA..HEAD --oneline --pretty=format:"%h" | while read commit_hash; do
             COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s" $commit_hash)
-            echo "### Commit **[$commit_hash]** - $COMMIT_MESSAGE" >> commit_report.txt
-            echo "\`\`\`diff" >> commit_report.txt
-            git show $commit_hash --patch | tail -n +2 >> commit_report.txt
-            echo "\`\`\`" >> commit_report.txt
-            echo "" >> commit_report.txt
-            echo "---" >> commit_report.txt
-            echo "" >> commit_report.txt
+            echo "<div class='commit'>" >> commit_report.html
+            echo "<h3>Commit [$commit_hash] - $COMMIT_MESSAGE</h3>" >> commit_report.html
+            echo "<pre>" >> commit_report.html
+            git show $commit_hash --patch | tail -n +2 >> commit_report.html
+            echo "</pre>" >> commit_report.html
+            echo "</div>" >> commit_report.html
           done
 
-          echo "### End of Commit Report" >> commit_report.txt
-          echo "" >> commit_report.txt
+          echo "</body>" >> commit_report.html
+          echo "</html>" >> commit_report.html
 
-      - name: Upload commit report as artifact
+      - name: Upload HTML commit report as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: commit-report
-          path: commit_report.txt
+          name: commit-report-html
+          path: commit_report.html
 
       - name: Post comment with download link
         env:
@@ -61,5 +68,5 @@ jobs:
           PR_NUMBER=${{ github.event.pull_request.number }}
           REPO_URL="https://github.com/${{ github.repository }}"
           ARTIFACT_URL="$REPO_URL/actions/runs/${{ github.run_id }}"
-          COMMENT_BODY="### 📄 Commit Report for PR #${PR_NUMBER}\n\nYou can download the commit report [here]($ARTIFACT_URL)."
+          COMMENT_BODY="### 📄 Commit Report for PR #${PR_NUMBER}\n\nYou can download the detailed HTML commit report [here]($ARTIFACT_URL)."
           gh pr comment $PR_NUMBER --body "$COMMENT_BODY"
