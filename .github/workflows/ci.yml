@@ -1,9 +1,6 @@
-name: Run PHPUnit with Coverage and PR Comments
+name: PHPUnit with Coverage Report
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
@@ -29,60 +26,49 @@ jobs:
         run: |
           composer install
 
-      # Executa os testes PHPUnit
-      - name: Run PHPUnit tests with coverage
+      # Executa os testes PHPUnit com cobertura
+      - name: Run PHPUnit with coverage
         run: |
           vendor/bin/phpunit --coverage-clover=coverage.xml --log-junit junit.xml
 
-      # Instalação do xmllint
-      - name: Install xmllint
+      # Instalação do jq para manipulação de JSON
+      - name: Install jq
         run: |
           sudo apt-get update
-          sudo apt-get install -y libxml2-utils
+          sudo apt-get install -y jq
 
-      # Verificar a cobertura do código
-      - name: Check coverage
+      # Processar cobertura e criar o corpo do comentário
+      - name: Generate PR Comment Body
         id: coverage
         run: |
-          COVERAGE=$(php -r "
+          # Extrair cobertura total
+          TOTAL_COVERAGE=$(php -r "
               libxml_use_internal_errors(true);
               \$xml = simplexml_load_file('coverage.xml');
               if (\$xml === false) {
                   echo 'Erro ao carregar o arquivo coverage.xml';
                   exit(1);
               }
-              // Calcula a cobertura como (coveredelements / elements) * 100
               \$coverage = (\$xml->project->metrics['coveredelements'] / \$xml->project->metrics['elements']) * 100;
               echo \$coverage;
           ")
-          echo "coverage=$COVERAGE" >> $GITHUB_ENV
-          
-          # Verifica se a cobertura está abaixo de 60% e não impede a execução
-          echo "Cobertura calculada: $COVERAGE%"
 
-      # Extrair detalhes dos testes (número de testes passados, falhados, etc)
-      - name: Extract PHPUnit test results
-        id: test_results
-        run: |
-          PASSED=$(xmllint --xpath "string(//testsuites/testsuite/test[@status='passed'])" junit.xml)
-          FAILED=$(xmllint --xpath "string(//testsuites/testsuite/test[@status='failed'])" junit.xml)
-          SKIPPED=$(xmllint --xpath "string(//testsuites/testsuite/test[@status='skipped'])" junit.xml)
-          TOTAL=$(xmllint --xpath "string(//testsuites/testsuite/@tests)" junit.xml)
-          echo "passed=$PASSED" >> $GITHUB_ENV
-          echo "failed=$FAILED" >> $GITHUB_ENV
-          echo "skipped=$SKIPPED" >> $GITHUB_ENV
-          echo "total=$TOTAL" >> $GITHUB_ENV
+          # Extrair detalhes do junit.xml
+          TOTAL=$(xmllint --xpath "string(//testsuites/@tests)" junit.xml)
+          FAILURES=$(xmllint --xpath "string(//testsuites/@failures)" junit.xml)
+          SKIPPED=$(xmllint --xpath "string(//testsuites/@skipped)" junit.xml)
 
-      # Adicionar comentário detalhado na PR (sempre, mesmo se a cobertura for abaixo de 60%)
-      - name: Post detailed comment on PR
+          # Criar o corpo do comentário
+          COMMENT_BODY=$(jq -n --arg coverage "$TOTAL_COVERAGE" --arg total "$TOTAL" --arg failures "$FAILURES" --arg skipped "$SKIPPED" \
+          '{"body": "### PHPUnit Test Coverage Report 🚀\n- **Total Coverage:** \($coverage)%\n- **Total Tests:** \($total)\n- **Failures:** \($failures)\n- **Skipped:** \($skipped)\n"}')
+
+          echo "$COMMENT_BODY" > comment.json
+
+      # Postar comentário na PR
+      - name: Post PR Comment
         if: ${{ github.event_name == 'pull_request' }}
         run: |
-          COMMENT_BODY="### PHPUnit Test Results 🚀\n\n- **Coverage:** ${{ env.coverage }}%\n- **Total Tests:** ${{ env.total }}\n- **Passed:** ${{ env.passed }}\n- **Failed:** ${{ env.failed }}\n- **Skipped:** ${{ env.skipped }}"
-
-          echo "Posting detailed comment: $COMMENT_BODY"
-
-          # Enviar o comentário para a PR usando a API do GitHub
           curl -X POST -H "Authorization: token ${{ secrets.PAT_TOKEN }}" \
           -H "Content-Type: application/json" \
-          -d "{\"body\": \"$COMMENT_BODY\"}" \
+          -d @comment.json \
           "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
