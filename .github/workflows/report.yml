@@ -14,11 +14,21 @@ jobs:
       - name: Fetch all commits
         run: git fetch --prune --unshallow
 
-      - name: Generate commit report
+      - name: Generate commit report with diffs
         run: |
           echo "Commit Report" > commit_report.txt
           echo "================" >> commit_report.txt
+          # Gera um relatório com todos os commits e suas alterações
           git log --oneline --pretty=format:"%h - %an, %ar : %s" | sort | uniq >> commit_report.txt
+          echo "================" >> commit_report.txt
+          echo "Commit Changes:" >> commit_report.txt
+          echo "================" >> commit_report.txt
+          # Para cada commit, adicionar o diff correspondente ao arquivo
+          git log --oneline --pretty=format:"%h" | while read commit_hash; do
+            echo "Changes for commit $commit_hash:" >> commit_report.txt
+            git show --stat $commit_hash >> commit_report.txt
+            echo "================" >> commit_report.txt
+          done
           echo "End of Commit Report" >> commit_report.txt
           cat commit_report.txt  # Exibe o conteúdo do arquivo gerado para debug
 
