@@ -24,6 +24,10 @@ jobs:
           php-version: '8.3'
           extensions: xdebug
 
+      # Instalação do xmllint
+      - name: Install xmllint
+        run: sudo apt-get update && sudo apt-get install -y libxml2-utils
+
       # Instalação das dependências do Composer
       - name: Install dependencies
         run: |
