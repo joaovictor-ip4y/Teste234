@@ -44,7 +44,7 @@ jobs:
                   exit(1);
               }
               \$coverage = (\$xml->project->metrics['coveredelements'] / \$xml->project->metrics['elements']) * 100;
-              echo \$coverage;
+              echo round(\$coverage, 2);
           ")
 
           echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
@@ -74,7 +74,7 @@ jobs:
       - name: Generate PR Comment Body
         id: generate_comment
         run: |
-          COMMENT_BODY="### PHPUnit Test Coverage Report 🚀\n\n- **Total Coverage:** ${{ env.COVERAGE }}%\n- **Total Tests:** ${{ env.TOTAL_TESTS }}\n- **Failures:** ${{ env.FAILURES }}\n- **Skipped:** ${{ env.SKIPPED }}\n- **Execution Time:** ${{ env.TIME }} seconds\n\n---\n\n*Keep up the great work! 💪*"
+          COMMENT_BODY="### PHPUnit Test Coverage Report 🚀\n\n- **Total Coverage:** ${{ env.COVERAGE }}%\n- **Total Tests:** ${{ env.TOTAL_TESTS }}\n- **Failures:** ${{ env.FAILURES }}\n- **Skipped:** ${{ env.SKIPPED }}\n- **Execution Time:** ${{ env.TIME }} seconds\n"
           echo "COMMENT_BODY=$COMMENT_BODY" >> $GITHUB_ENV
 
       # Postar o comentário na PR
