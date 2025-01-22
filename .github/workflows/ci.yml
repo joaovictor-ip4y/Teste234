@@ -35,7 +35,7 @@ jobs:
           vendor/bin/phpunit --coverage-clover=coverage.xml --log-junit=junit.xml
 
       # Verificar a cobertura do código
-      - name: Check coverage and post comment
+      - name: Check coverage
         id: coverage
         run: |
           COVERAGE=$(php -r "
@@ -50,6 +50,14 @@ jobs:
               echo \$coverage;
           ")
 
+          # Verifica se a cobertura está abaixo de 60% e força falha se necessário
+          echo "Cobertura: $COVERAGE%"
+          echo "coverage=$COVERAGE" >> $GITHUB_ENV
+
+      # Criar comentário sobre os resultados dos testes
+      - name: Generate PR Comment Body
+        id: generate_comment
+        run: |
           # Extrair dados do junit.xml
           TOTAL_TESTS=$(xmllint --xpath "string(//testsuites/@tests)" junit.xml || echo "0")
           FAILURES=$(xmllint --xpath "string(//testsuites/@failures)" junit.xml || echo "0")
@@ -62,18 +70,20 @@ jobs:
 
           echo "$COMMENT_BODY" > comment.json
 
-          # Postar o comentário na PR
-          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
-            curl -X POST -H "Authorization: token $PAT_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d @comment.json \
-            "${{ github.event.pull_request.comments_url }}"
-          fi
+      # Postar o comentário na PR
+      - name: Post comment on PR
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d @comment.json \
+          "${{ github.event.pull_request.comments_url }}"
 
-          # Verifica se a cobertura está abaixo de 60% e força falha se necessário
-          if (( $(echo "$COVERAGE < 60" | bc -l) )); then
-              echo "Cobertura abaixo de 60%: $COVERAGE%"
-              exit 1
-          else
-              echo "Cobertura OK: $COVERAGE%"
-          fi
+      # Falhar o job caso a cobertura esteja abaixo de 60%
+      - name: Fail if coverage is below 60%
+        if: ${{ env.coverage < 60 }}
+        run: |
+          echo "Cobertura abaixo de 60%: ${{ env.coverage }}%"
+          exit 1
