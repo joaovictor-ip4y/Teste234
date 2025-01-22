@@ -73,13 +73,21 @@ jobs:
       - name: Post comment on PR
         if: ${{ github.event_name == 'pull_request' }}
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}  # Use o seu token aqui
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}  # Certifique-se de que o PAT_TOKEN está configurado corretamente
           COVERAGE: ${{ env.coverage }}
           TESTS: ${{ env.tests }}
           FAILURES: ${{ env.failures }}
           SKIPPED: ${{ env.skipped }}
           TIME: ${{ env.time }}
         run: |
+          echo "Evento: ${{ github.event_name }}"
+          
+          # Verifica se é uma pull request
+          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
+            echo "Este não é um evento de Pull Request. Comentário não será postado."
+            exit 0
+          fi
+
           COMMENT_BODY="### PHPUnit Test Results 🚀\n\n
           - **Total Tests:** $TESTS\n
           - **Failures:** $FAILURES\n
@@ -89,7 +97,10 @@ jobs:
           
           echo "Comment Body: $COMMENT_BODY"
 
-          # Postar o comentário na PR
+          # Verifica se a URL da PR está correta
+          echo "PR URL: ${{ github.event.pull_request.url }}"
+
+          # Postar o comentário na PR usando seu token PAT_TOKEN
           curl -X POST -H "Authorization: token $PAT_TOKEN" \
           -H "Content-Type: application/json" \
           -d "$(jq -n --arg body "$COMMENT_BODY" '{body: $body}')" \
