@@ -23,7 +23,7 @@ jobs:
           cat commit_report.txt  # Exibe o conteúdo do arquivo gerado para debug
 
       - name: Upload commit report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: commit-report
           path: commit_report.txt
