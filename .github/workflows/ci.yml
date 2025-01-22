@@ -1,4 +1,4 @@
-name: Run PHPUnit with Coverage
+name: Run PHPUnit with Coverage and Post Comments
 
 on:
   push:
@@ -34,11 +34,9 @@ jobs:
         run: |
           vendor/bin/phpunit --coverage-clover=coverage.xml --log-junit=junit.xml
 
-      # Extrair a cobertura e os resultados dos testes
-      - name: Extract coverage and test results
-        id: extract_data
+      # Verificar a cobertura do código
+      - name: Check coverage
         run: |
-          # Extrair a cobertura total de coverage.xml
           COVERAGE=$(php -r "
               libxml_use_internal_errors(true);
               \$xml = simplexml_load_file('coverage.xml');
@@ -46,61 +44,41 @@ jobs:
                   echo 'Erro ao carregar o arquivo coverage.xml';
                   exit(1);
               }
+              // Calcula a cobertura como (coveredelements / elements) * 100
               \$coverage = (\$xml->project->metrics['coveredelements'] / \$xml->project->metrics['elements']) * 100;
               echo \$coverage;
           ")
 
-          # Extrair dados de junit.xml usando PHP
-          TOTAL_TESTS=$(php -r "
-              \$xml = simplexml_load_file('junit.xml');
-              if (\$xml === false) {
-                  echo 'Erro ao carregar o arquivo junit.xml';
-                  exit(1);
-              }
-              echo (string) \$xml->testsuite['tests'];
-          ")
-          FAILURES=$(php -r "
-              \$xml = simplexml_load_file('junit.xml');
-              if (\$xml === false) {
-                  echo 'Erro ao carregar o arquivo junit.xml';
-                  exit(1);
-              }
-              echo (string) \$xml->testsuite['failures'];
-          ")
-          SKIPPED=$(php -r "
-              \$xml = simplexml_load_file('junit.xml');
-              if (\$xml === false) {
-                  echo 'Erro ao carregar o arquivo junit.xml';
-                  exit(1);
-              }
-              echo (string) \$xml->testsuite['skipped'];
-          ")
-          TIME=$(php -r "
-              \$xml = simplexml_load_file('junit.xml');
-              if (\$xml === false) {
-                  echo 'Erro ao carregar o arquivo junit.xml';
-                  exit(1);
-              }
-              echo (string) \$xml->testsuite['time'];
-          ")
-
-          # Se não houver dados, colocar como "N/A"
-          if [[ "$TOTAL_TESTS" == "" || "$TOTAL_TESTS" == "0" ]]; then
-              TOTAL_TESTS="N/A"
-          fi
-          if [[ "$TIME" == "" || "$TIME" == "0" ]]; then
-              TIME="N/A"
+          # Verifica se a cobertura está abaixo de 60%
+          if (( $(echo "$COVERAGE < 60" | bc -l) )); then
+              echo "Cobertura abaixo de 60%: $COVERAGE%"
+              exit 1
+          else
+              echo "Cobertura OK: $COVERAGE%"
           fi
 
-          # Criar o corpo do comentário
-          COMMENT_BODY="### PHPUnit Test Coverage Report 🚀\n\n- **Total Coverage:** $COVERAGE%\n- **Total Tests:** $TOTAL_TESTS\n- **Failures:** $FAILURES\n- **Skipped:** $SKIPPED\n- **Execution Time:** $TIME seconds"
+      # Extrair métricas do arquivo junit.xml
+      - name: Extract JUnit metrics
+        run: |
+          TOTAL_TESTS=$(xmllint --xpath "string(//testsuites/@tests)" junit.xml || echo "0")
+          FAILURES=$(xmllint --xpath "string(//testsuites/@failures)" junit.xml || echo "0")
+          SKIPPED=$(xmllint --xpath "string(//testsuites/@skipped)" junit.xml || echo "0")
+          TIME=$(xmllint --xpath "string(//testsuites/@time)" junit.xml || echo "0")
 
-          # Definir o corpo do comentário como variável de ambiente
-          echo "COMMENT_BODY=$COMMENT_BODY" >> $GITHUB_ENV
+      # Gerar o corpo do comentário com as métricas
+      - name: Generate PR Comment Body
+        id: coverage
+        run: |
+          COMMENT_BODY="### PHPUnit Test Coverage Report 🚀\n\n- **Total Coverage:** $COVERAGE%\n- **Total Tests:** $TOTAL_TESTS\n- **Failures:** $FAILURES\n- **Skipped:** $SKIPPED\n- **Execution Time:** $TIME seconds\n\n---\n\n*Keep up the great work! 💪*"
+          echo "$COMMENT_BODY" > comment.json
 
-      # Comentar na PR com o resultado do teste
+      # Postar o comentário na PR
       - name: Post comment on PR
-        uses: peter-evans/create-or-update-comment@v2
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          body: ${{ env.COMMENT_BODY }}
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d @comment.json \
+          "${{ github.event.pull_request.comments_url }}"
