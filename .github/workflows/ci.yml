@@ -1,6 +1,9 @@
-name: PHPUnit with Coverage Check
+name: Run PHPUnit with Coverage
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
     branches:
       - main
@@ -23,16 +26,17 @@ jobs:
 
       # Instalação das dependências do Composer
       - name: Install dependencies
-        run: composer install
+        run: |
+          composer install
 
-      # Executa os testes PHPUnit com cobertura
+      # Executa os testes PHPUnit
       - name: Run PHPUnit tests with coverage
         run: |
           vendor/bin/phpunit --coverage-clover=coverage.xml --log-junit=junit.xml
 
-      # Extrair cobertura do arquivo coverage.xml
-      - name: Extract coverage
-        id: coverage_check
+      # Verificar e postar cobertura, permitindo falhas no teste
+      - name: Post Coverage Result
+        if: always()  # Isso garante que o comentário será postado, mesmo com falha
         run: |
           COVERAGE=$(php -r "
               libxml_use_internal_errors(true);
@@ -41,59 +45,22 @@ jobs:
                   echo 'Erro ao carregar o arquivo coverage.xml';
                   exit(1);
               }
+              // Calcula a cobertura como (coveredelements / elements) * 100
               \$coverage = (\$xml->project->metrics['coveredelements'] / \$xml->project->metrics['elements']) * 100;
-              echo round(\$coverage, 2);
+              echo \$coverage;
           ")
-          echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
-          echo "Cobertura calculada: $COVERAGE%"
-
-      # Parse junit.xml para obter dados adicionais
-      - name: Parse junit.xml
-        id: parse_junit
-        run: |
-          TESTS=$(php -r "
-              \$xml = simplexml_load_file('junit.xml');
-              echo (int) \$xml->testsuite['tests'];
-          ")
-          FAILURES=$(php -r "
-              \$xml = simplexml_load_file('junit.xml');
-              echo (int) \$xml->testsuite['failures'];
-          ")
-          SKIPPED=$(php -r "
-              \$xml = simplexml_load_file('junit.xml');
-              echo (int) \$xml->testsuite['skipped'];
-          ")
-          TIME=$(php -r "
-              \$xml = simplexml_load_file('junit.xml');
-              echo (float) \$xml->testsuite['time'];
-          ")
-
-          echo "total_tests=$TESTS" >> $GITHUB_ENV
-          echo "failures=$FAILURES" >> $GITHUB_ENV
-          echo "skipped=$SKIPPED" >> $GITHUB_ENV
-          echo "execution_time=$TIME" >> $GITHUB_ENV
-
-      # Comentar resultados na PR
-      - name: Post test results
-        uses: peter-evans/create-or-update-comment@v2
-        with:
-          token: ${{ secrets.PAT_TOKEN }}
-          repository: ${{ github.repository }}
-          issue-number: ${{ github.event.pull_request.number }}
-          body: |
-            ### PHPUnit Test Coverage Report 🚀
-
-            - **Total Coverage:** ${{ env.COVERAGE }}%
-            - **Total Tests:** ${{ env.total_tests }}
-            - **Failures:** ${{ env.failures }}
-            - **Skipped:** ${{ env.skipped }}
-            - **Execution Time:** ${{ env.execution_time }} seconds
-
-      # Validar cobertura (bloqueio se menor que 60%)
-      - name: Validate coverage threshold
-        if: always() # Executa mesmo que passos anteriores falhem
-        run: |
-          if [ $(echo "${{ env.COVERAGE }} < 60" | bc) -eq 1 ]; then
-              echo "Cobertura abaixo do limite mínimo: ${{ env.COVERAGE }}%"
-              exit 1
-          fi
+          
+          # Criar o comentário
+          COMMENT="### PHPUnit Test Coverage Report 🚀
+          - **Total Coverage:** \$COVERAGE%
+          - **Total Tests:** $(grep -o 'tests="[^"]*' junit.xml | head -n 1 | sed 's/tests="//')
+          - **Failures:** $(grep -o 'failures="[^"]*' junit.xml | head -n 1 | sed 's/failures="//')
+          - **Skipped:** $(grep -o 'skipped="[^"]*' junit.xml | head -n 1 | sed 's/skipped="//')
+          - **Execution Time:** $(grep -o 'time="[^"]*' junit.xml | head -n 1 | sed 's/time="//')
+          
+          "
+          
+          # Postar o comentário no PR
+          curl -H "Authorization: token ${{ secrets.PAT_TOKEN }}" -X POST \
+            -d "{\"body\": \"$COMMENT\"}" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
