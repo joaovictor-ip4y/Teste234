@@ -55,11 +55,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create comment on PR
+      - name: Create comment on PR with download link
         if: github.event.pull_request
         run: |
           PR_NUMBER=${{ github.event.pull_request.number }}
-          REPORT_CONTENT=$(cat commit_report.txt)
-          gh pr comment $PR_NUMBER --body "$REPORT_CONTENT"
+          RELEASE_URL="https://github.com/${{ github.repository }}/releases/tag/pr-${{ github.event.pull_request.number }}-report"
+          COMMENT_BODY="The commit report for this PR is available for download: $RELEASE_URL"
+          gh pr comment $PR_NUMBER --body "$COMMENT_BODY"
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
