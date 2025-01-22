@@ -44,8 +44,13 @@ jobs:
       - name: Create tag for release
         run: |
           TAG_NAME="pr-${{ github.event.pull_request.number }}-report"
-          git tag $TAG_NAME
-          git push origin $TAG_NAME
+          # Verifica se a tag já existe remotamente, se não, cria a tag
+          if ! git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+            git tag $TAG_NAME
+            git push origin $TAG_NAME
+          else
+            echo "Tag $TAG_NAME already exists, skipping tag creation."
+          fi
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
