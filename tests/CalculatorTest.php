@@ -1,4 +1,4 @@
-<?php
+ <?php
 
 namespace App\Tests;
 
@@ -40,3 +40,4 @@ class CalculatorTest extends TestCase
         $calculator->divide(5, 0);
     }
 }
+
