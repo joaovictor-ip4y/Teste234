@@ -23,6 +23,16 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           REPORT_PATH="commit_report.txt"
+
+          {
+            echo "Relatório de Commits da PR #${PR_NUMBER}";
+            echo "Este relatório contém todos os commits associados ao PR #${PR_NUMBER}.";
+            echo "------------------------------------------------------------";
+            echo "Commits neste PR:";
+            git log $BASE_SHA..$HEAD_SHA --oneline --pretty=format:"Commit [%h] - Autor: %an, Data: %ar, Mensagem: %s";
+            echo "------------------------------------------------------------";
+          } > $REPORT_PATH
+
           echo "Relatório de Commits da PR #${PR_NUMBER}" > $REPORT_PATH
           echo "Este relatório contém todos os commits associados ao PR #${PR_NUMBER}." >> $REPORT_PATH
           echo "------------------------------------------------------------" >> $REPORT_PATH
@@ -30,6 +40,7 @@ jobs:
           echo "Commits neste PR:" >> $REPORT_PATH
           git log $BASE_SHA..$HEAD_SHA --oneline --pretty=format:"Commit [%h] - Autor: %an, Data: %ar, Mensagem: %s" >> $REPORT_PATH
           echo "------------------------------------------------------------" >> $REPORT_PATH
+
 
       - name: Upload TXT commit report as artifact
         uses: actions/upload-artifact@v4

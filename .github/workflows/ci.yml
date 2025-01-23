@@ -3,7 +3,7 @@ name: PHPUnit with Coverage Check
 on:
   pull_request:
     branches:
-      - main
+      - master
 
 jobs:
   test:
