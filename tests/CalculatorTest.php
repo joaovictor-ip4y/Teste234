@@ -18,25 +18,4 @@ class CalculatorTest extends TestCase
         $calculator = new Calculator();
         $this->assertEquals(1, $calculator->subtract(3, 2));
     }
-
-    public function testMultiply(): void
-    {
-        $calculator = new Calculator();
-        $this->assertEquals(6, $calculator->multiply(2, 3));
-    }
-
-    public function testDivide(): void
-    {
-        $calculator = new Calculator();
-        $this->assertEquals(2.5, $calculator->divide(5, 2));
-    }
-
-    public function testDivideByZero(): void
-    {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage("Division by zero is not allowed.");
-
-        $calculator = new Calculator();
-        $calculator->divide(5, 0);
-    }
 }

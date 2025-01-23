@@ -27,7 +27,6 @@ class Calculator
         return $a / $b;
     }
 
-    // Métodos sem teste
     public function modulo(int $a, int $b): int
     {
         return $a % $b;
