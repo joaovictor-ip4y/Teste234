@@ -69,8 +69,10 @@ jobs:
 
       - name: Publicar comentário com link de download
         uses: actions/github-script@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.PAT_TOKEN }}
           script: |
             const prNumber = ${{ github.event.pull_request.number }};
             const repoUrl = `https://github.com/${{ github.repository }}`;
@@ -80,7 +82,7 @@ jobs:
 
               Você pode baixar o relatório detalhado em HTML [aqui](${artifactUrl}).
             `;
-            github.rest.issues.createComment({
+            await github.rest.issues.createComment({
               ...context.repo,
               issue_number: prNumber,
               body: commentBody,
