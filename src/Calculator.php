@@ -1,30 +1,16 @@
 <?php
-// src/Calculator.php
 
 namespace App;
 
-class Calculator
+class Exemplo
 {
-    public function add($a, $b)
+    public function soma(int $a, int $b): int
     {
         return $a + $b;
     }
 
-    public function subtract($a, $b)
+    public function subtrai(int $a, int $b): int
     {
         return $a - $b;
-    }
-
-    public function multiply($a, $b)
-    {
-        return $a * $b;
-    }
-
-    public function divide($a, $b)
-    {
-        if ($b == 0) {
-            throw new \Exception("Cannot divide by zero");
-        }
-        return $a / $b;
     }
 }

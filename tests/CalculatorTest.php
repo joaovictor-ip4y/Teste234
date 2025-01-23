@@ -1,18 +1,26 @@
 <?php
-// tests/CalculatorTest.php
 
-namespace App\Tests;
-
+use App\Exemplo;
 use PHPUnit\Framework\TestCase;
-use App\Calculator;
 
-class CalculatorTest extends TestCase
+class ExemploTest extends TestCase
 {
-    public function testAdd()
+    private Exemplo $exemplo;
+
+    protected function setUp(): void
     {
-        $calculator = new Calculator();
-        $this->assertEquals(4, $calculator->add(2, 2));
+        $this->exemplo = new Exemplo();
     }
 
-    // Deixamos de testar as funções 'subtract', 'multiply' e 'divide' para reduzir a cobertura.
+    public function testSoma()
+    {
+        $resultado = $this->exemplo->soma(2, 3);
+        $this->assertEquals(5, $resultado);
+    }
+
+    public function testSubtrai()
+    {
+        $resultado = $this->exemplo->subtrai(5, 3);
+        $this->assertEquals(2, $resultado);
+    }
 }

@@ -2,10 +2,11 @@ name: Relatório de Commits
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [closed]
 
 jobs:
   commit_report:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     steps:
