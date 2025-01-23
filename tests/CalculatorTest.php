@@ -40,9 +40,18 @@ class CalculatorTest extends TestCase
         $calculator->divide(6, 0);
     }
 
-    public function testSquare(): void
+    public function testSkipped(): void
     {
+        $this->markTestSkipped("This test is skipped intentionally.");
+    }
+
+    public function testConditionalSkip(): void
+    {
+        if (!extension_loaded('xdebug')) {
+            $this->markTestSkipped("Xdebug extension is not loaded.");
+        }
+
         $calculator = new Calculator();
-        $this->assertEquals(9, $calculator->square(3));
+        $this->assertEquals(2, $calculator->divide(6, 3));
     }
 }

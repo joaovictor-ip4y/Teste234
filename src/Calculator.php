@@ -26,9 +26,4 @@ class Calculator
         }
         return $a / $b;
     }
-
-    public function square(int $a): int
-    {
-        return $a * $a;
-    }
 }
