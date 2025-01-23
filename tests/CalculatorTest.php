@@ -1,26 +1,43 @@
 <?php
 
-use App\Exemplo;
 use PHPUnit\Framework\TestCase;
+use App\Calculator;
 
-class ExemploTest extends TestCase
+class CalculatorTest extends TestCase
 {
-    private Exemplo $exemplo;
+    private Calculator $calculator;
 
     protected function setUp(): void
     {
-        $this->exemplo = new Exemplo();
+        $this->calculator = new Calculator();
     }
 
-    public function testSoma()
+    public function testAdd(): void
     {
-        $resultado = $this->exemplo->soma(2, 3);
-        $this->assertEquals(5, $resultado);
+        $this->assertEquals(5, $this->calculator->add(2, 3));
+        $this->assertEquals(0, $this->calculator->add(0, 0));
+        $this->assertEquals(-5, $this->calculator->add(-2, -3));
     }
 
-    public function testSubtrai()
+    public function testSubtract(): void
     {
-        $resultado = $this->exemplo->subtrai(5, 3);
-        $this->assertEquals(2, $resultado);
+        $this->assertEquals(1, $this->calculator->subtract(3, 2));
+        $this->assertEquals(-1, $this->calculator->subtract(2, 3));
+        $this->assertEquals(0, $this->calculator->subtract(2, 2));
     }
-}
+
+    public function testMultiply(): void
+    {
+        $this->assertEquals(6, $this->calculator->multiply(2, 3));
+        $this->assertEquals(0, $this->calculator->multiply(2, 0));
+        $this->assertEquals(-6, $this->calculator->multiply(2, -3));
+    }
+
+    public function testDivide(): void
+    {
+        $this->assertEquals(2.0, $this->calculator->divide(6, 3));
+        $this->assertEquals(1.5, $this->calculator->divide(3, 2));
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage("Division by zero is not allowed.");
+        $this->calculator->di
