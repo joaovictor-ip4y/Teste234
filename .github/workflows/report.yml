@@ -38,7 +38,7 @@ jobs:
           echo "</head>" >> $REPORT_PATH
           echo "<body>" >> $REPORT_PATH
 
-          echo "<h1>Relatório de Commits para PR #${PR_NUMBER}</h1>" >> $REPORT_PATH
+          echo "<h1>Relatório de Commits da PR #${PR_NUMBER}</h1>" >> $REPORT_PATH
           echo "<p>Este relatório contém todos os commits associados ao <strong>PR #${PR_NUMBER}</strong>.</p>" >> $REPORT_PATH
           echo "<hr class='divider'>" >> $REPORT_PATH
 
@@ -65,7 +65,7 @@ jobs:
             const repoUrl = `https://github.com/${{ github.repository }}`;
             const artifactUrl = `${repoUrl}/actions/runs/${{ github.run_id }}`;
             const commentBody = `
-              ### 📄 Relatório de Commits para PR #${prNumber}
+              ### 📄 Relatório de Commits da PR #${prNumber}
 
               Você pode baixar o relatório detalhado em HTML [aqui](${artifactUrl}).
             `;
