@@ -30,6 +30,7 @@ jobs:
           echo "Commits neste PR:" >> $REPORT_PATH
           git log $BASE_SHA..$HEAD_SHA --oneline --pretty=format:"Commit [%h] - Autor: %an, Data: %ar, Mensagem: %s" >> $REPORT_PATH
           echo "------------------------------------------------------------" >> $REPORT_PATH
+          echo "" >> $REPORT_PATH
 
       - name: Upload TXT commit report as artifact
         uses: actions/upload-artifact@v4
