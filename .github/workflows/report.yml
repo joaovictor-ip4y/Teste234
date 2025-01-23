@@ -1,4 +1,4 @@
-name: Commit Report
+name: Relatório de Commits
 
 on:
   pull_request:
@@ -14,14 +14,14 @@ jobs:
       - name: Fetch all commits
         run: git fetch --prune --unshallow
 
-      - name: Generate HTML commit report
+      - name: Gerar relatório de commits em HTML
         run: |
           echo "<!DOCTYPE html>" > commit_report.html
-          echo "<html lang='en'>" >> commit_report.html
+          echo "<html lang='pt-BR'>" >> commit_report.html
           echo "<head>" >> commit_report.html
           echo "  <meta charset='UTF-8'>" >> commit_report.html
           echo "  <meta name='viewport' content='width=device-width, initial-scale=1.0'>" >> commit_report.html
-          echo "  <title>Commit Report</title>" >> commit_report.html
+          echo "  <title>Relatório de Commits</title>" >> commit_report.html
           echo "  <style>" >> commit_report.html
           echo "    body { font-family: Arial, sans-serif; line-height: 1.6; margin: 20px; }" >> commit_report.html
           echo "    h1, h2, h3 { color: #333; }" >> commit_report.html
@@ -32,16 +32,16 @@ jobs:
           echo "</head>" >> commit_report.html
           echo "<body>" >> commit_report.html
 
-          echo "<h1>Commit Report for PR #${{ github.event.pull_request.number }}</h1>" >> commit_report.html
-          echo "<p>This report contains all commits and their associated changes for <strong>PR #${{ github.event.pull_request.number }}</strong>.</p>" >> commit_report.html
+          echo "<h1>Relatório de Commits para PR #${{ github.event.pull_request.number }}</h1>" >> commit_report.html
+          echo "<p>Este relatório contém todos os commits e suas alterações associadas para o <strong>PR #${{ github.event.pull_request.number }}</strong>.</p>" >> commit_report.html
           echo "<hr class='divider'>" >> commit_report.html
 
-          echo "<h2>Commits in this PR:</h2>" >> commit_report.html
+          echo "<h2>Commits neste PR:</h2>" >> commit_report.html
           BASE_SHA=$(git merge-base origin/main HEAD)
-          git log $BASE_SHA..HEAD --oneline --pretty=format:"<div class='commit'><h3>Commit [%h]</h3><p><strong>Author:</strong> %an, <strong>Date:</strong> %ar</p><p><strong>Message:</strong> %s</p></div>" >> commit_report.html
+          git log $BASE_SHA..HEAD --oneline --pretty=format:"<div class='commit'><h3>Commit [%h]</h3><p><strong>Autor:</strong> %an, <strong>Data:</strong> %ar</p><p><strong>Mensagem:</strong> %s</p></div>" >> commit_report.html
 
           echo "<hr class='divider'>" >> commit_report.html
-          echo "<h2>Detailed Changes:</h2>" >> commit_report.html
+          echo "<h2>Alterações Detalhadas:</h2>" >> commit_report.html
           git log $BASE_SHA..HEAD --oneline --pretty=format:"%h" | while read commit_hash; do
             COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s" $commit_hash)
             echo "<div class='commit'>" >> commit_report.html
@@ -61,12 +61,12 @@ jobs:
           name: commit-report-html
           path: commit_report.html
 
-      - name: Post comment with download link
+      - name: Publicar comentário com link de download
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
           PR_NUMBER=${{ github.event.pull_request.number }}
           REPO_URL="https://github.com/${{ github.repository }}"
           ARTIFACT_URL="$REPO_URL/actions/runs/${{ github.run_id }}"
-          COMMENT_BODY="### 📄 Commit Report for PR #${PR_NUMBER}\n\nYou can download the detailed HTML commit report [here]($ARTIFACT_URL)."
+          COMMENT_BODY="### 📄 Relatório de Commits para PR #${PR_NUMBER}\n\nVocê pode baixar o relatório detalhado em HTML [aqui]($ARTIFACT_URL)."
           gh pr comment $PR_NUMBER --body "$COMMENT_BODY"
