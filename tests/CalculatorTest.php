@@ -1,42 +1,26 @@
 <?php
 
-namespace App\Tests;
-
+use App\Exemplo;
 use PHPUnit\Framework\TestCase;
-use App\Calculator;
 
-class CalculatorTest extends TestCase
+class ExemploTest extends TestCase
 {
-    public function testAdd(): void
+    private Exemplo $exemplo;
+
+    protected function setUp(): void
     {
-        $calculator = new Calculator();
-        $this->assertEquals(5, $calculator->add(2, 3));
+        $this->exemplo = new Exemplo();
     }
 
-    public function testSubtract(): void
+    public function testSoma()
     {
-        $calculator = new Calculator();
-        $this->assertEquals(1, $calculator->subtract(3, 2));
+        $resultado = $this->exemplo->soma(2, 3);
+        $this->assertEquals(5, $resultado);
     }
 
-    public function testMultiply(): void
+    public function testSubtrai()
     {
-        $calculator = new Calculator();
-        $this->assertEquals(6, $calculator->multiply(2, 3));
-    }
-
-    public function testDivide(): void
-    {
-        $calculator = new Calculator();
-        $this->assertEquals(2.5, $calculator->divide(5, 2));
-    }
-
-    public function testDivideByZero(): void
-    {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage("Division by zero is not allowed.");
-
-        $calculator = new Calculator();
-        $calculator->divide(5, 0);
+        $resultado = $this->exemplo->subtrai(5, 3);
+        $this->assertEquals(2, $resultado);
     }
 }
