@@ -7,6 +7,7 @@ on:
 jobs:
   commit_report:
     runs-on: ubuntu-latest
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v2
@@ -15,45 +16,49 @@ jobs:
         run: git fetch --prune --unshallow
 
       - name: Gerar relatório de commits em HTML
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          echo "<!DOCTYPE html>" > commit_report.html
-          echo "<html lang='pt-BR'>" >> commit_report.html
-          echo "<head>" >> commit_report.html
-          echo "  <meta charset='UTF-8'>" >> commit_report.html
-          echo "  <meta name='viewport' content='width=device-width, initial-scale=1.0'>" >> commit_report.html
-          echo "  <title>Relatório de Commits</title>" >> commit_report.html
-          echo "  <style>" >> commit_report.html
-          echo "    body { font-family: Arial, sans-serif; line-height: 1.6; margin: 20px; }" >> commit_report.html
-          echo "    h1, h2, h3 { color: #333; }" >> commit_report.html
-          echo "    pre { background-color: #f4f4f4; padding: 10px; border: 1px solid #ddd; overflow-x: auto; }" >> commit_report.html
-          echo "    .commit { margin-bottom: 20px; }" >> commit_report.html
-          echo "    .divider { border-top: 1px solid #ddd; margin: 20px 0; }" >> commit_report.html
-          echo "  </style>" >> commit_report.html
-          echo "</head>" >> commit_report.html
-          echo "<body>" >> commit_report.html
+          REPORT_PATH="commit_report.html"
+          echo "<!DOCTYPE html>" > $REPORT_PATH
+          echo "<html lang='pt-BR'>" >> $REPORT_PATH
+          echo "<head>" >> $REPORT_PATH
+          echo "  <meta charset='UTF-8'>" >> $REPORT_PATH
+          echo "  <meta name='viewport' content='width=device-width, initial-scale=1.0'>" >> $REPORT_PATH
+          echo "  <title>Relatório de Commits</title>" >> $REPORT_PATH
+          echo "  <style>" >> $REPORT_PATH
+          echo "    body { font-family: Arial, sans-serif; line-height: 1.6; margin: 20px; }" >> $REPORT_PATH
+          echo "    h1, h2, h3 { color: #333; }" >> $REPORT_PATH
+          echo "    pre { background-color: #f4f4f4; padding: 10px; border: 1px solid #ddd; overflow-x: auto; }" >> $REPORT_PATH
+          echo "    .commit { margin-bottom: 20px; }" >> $REPORT_PATH
+          echo "    .divider { border-top: 1px solid #ddd; margin: 20px 0; }" >> $REPORT_PATH
+          echo "  </style>" >> $REPORT_PATH
+          echo "</head>" >> $REPORT_PATH
+          echo "<body>" >> $REPORT_PATH
 
-          echo "<h1>Relatório de Commits para PR #${{ github.event.pull_request.number }}</h1>" >> commit_report.html
-          echo "<p>Este relatório contém todos os commits e suas alterações associadas para o <strong>PR #${{ github.event.pull_request.number }}</strong>.</p>" >> commit_report.html
-          echo "<hr class='divider'>" >> commit_report.html
+          echo "<h1>Relatório de Commits para PR #${PR_NUMBER}</h1>" >> $REPORT_PATH
+          echo "<p>Este relatório contém todos os commits e suas alterações associadas para o <strong>PR #${PR_NUMBER}</strong>.</p>" >> $REPORT_PATH
+          echo "<hr class='divider'>" >> $REPORT_PATH
 
-          echo "<h2>Commits neste PR:</h2>" >> commit_report.html
-          BASE_SHA=$(git merge-base origin/main HEAD)
-          git log $BASE_SHA..HEAD --oneline --pretty=format:"<div class='commit'><h3>Commit [%h]</h3><p><strong>Autor:</strong> %an, <strong>Data:</strong> %ar</p><p><strong>Mensagem:</strong> %s</p></div>" >> commit_report.html
+          echo "<h2>Commits neste PR:</h2>" >> $REPORT_PATH
+          git log $BASE_SHA..$HEAD_SHA --oneline --pretty=format:"<div class='commit'><h3>Commit [%h]</h3><p><strong>Autor:</strong> %an, <strong>Data:</strong> %ar</p><p><strong>Mensagem:</strong> %s</p></div>" >> $REPORT_PATH
 
-          echo "<hr class='divider'>" >> commit_report.html
-          echo "<h2>Alterações Detalhadas:</h2>" >> commit_report.html
-          git log $BASE_SHA..HEAD --oneline --pretty=format:"%h" | while read commit_hash; do
+          echo "<hr class='divider'>" >> $REPORT_PATH
+          echo "<h2>Alterações Detalhadas:</h2>" >> $REPORT_PATH
+          git log $BASE_SHA..$HEAD_SHA --oneline --pretty=format:"%h" | while read commit_hash; do
             COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s" $commit_hash)
-            echo "<div class='commit'>" >> commit_report.html
-            echo "<h3>Commit [$commit_hash] - $COMMIT_MESSAGE</h3>" >> commit_report.html
-            echo "<pre>" >> commit_report.html
-            git show $commit_hash --patch | tail -n +2 >> commit_report.html
-            echo "</pre>" >> commit_report.html
-            echo "</div>" >> commit_report.html
+            echo "<div class='commit'>" >> $REPORT_PATH
+            echo "<h3>Commit [$commit_hash] - $COMMIT_MESSAGE</h3>" >> $REPORT_PATH
+            echo "<pre>" >> $REPORT_PATH
+            git show $commit_hash --patch | tail -n +2 >> $REPORT_PATH
+            echo "</pre>" >> $REPORT_PATH
+            echo "</div>" >> $REPORT_PATH
           done
 
-          echo "</body>" >> commit_report.html
-          echo "</html>" >> commit_report.html
+          echo "</body>" >> $REPORT_PATH
+          echo "</html>" >> $REPORT_PATH
 
       - name: Upload HTML commit report as artifact
         uses: actions/upload-artifact@v4
@@ -62,11 +67,20 @@ jobs:
           path: commit_report.html
 
       - name: Publicar comentário com link de download
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
-        run: |
-          PR_NUMBER=${{ github.event.pull_request.number }}
-          REPO_URL="https://github.com/${{ github.repository }}"
-          ARTIFACT_URL="$REPO_URL/actions/runs/${{ github.run_id }}"
-          COMMENT_BODY="### 📄 Relatório de Commits para PR #${PR_NUMBER}\n\nVocê pode baixar o relatório detalhado em HTML [aqui]($ARTIFACT_URL)."
-          gh pr comment $PR_NUMBER --body "$COMMENT_BODY"
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prNumber = ${{ github.event.pull_request.number }};
+            const repoUrl = `https://github.com/${{ github.repository }}`;
+            const artifactUrl = `${repoUrl}/actions/runs/${{ github.run_id }}`;
+            const commentBody = `
+              ### 📄 Relatório de Commits para PR #${prNumber}
+
+              Você pode baixar o relatório detalhado em HTML [aqui](${artifactUrl}).
+            `;
+            github.rest.issues.createComment({
+              ...context.repo,
+              issue_number: prNumber,
+              body: commentBody,
+            });
