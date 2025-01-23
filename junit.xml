@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <testsuites>
-  <testsuite name="" tests="5" assertions="6" errors="0" warnings="0" failures="0" skipped="0" time="0.005860">
-    <testsuite name="Application Test Suite" tests="5" assertions="6" errors="0" warnings="0" failures="0" skipped="0" time="0.005860">
-      <testsuite name="App\Tests\CalculatorTest" file="/home/joao_victor/Projects/Teste234/tests/CalculatorTest.php" tests="5" assertions="6" errors="0" warnings="0" failures="0" skipped="0" time="0.005860">
-        <testcase name="testAdd" class="App\Tests\CalculatorTest" classname="App.Tests.CalculatorTest" file="/home/joao_victor/Projects/Teste234/tests/CalculatorTest.php" line="10" assertions="1" time="0.003750"/>
-        <testcase name="testSubtract" class="App\Tests\CalculatorTest" classname="App.Tests.CalculatorTest" file="/home/joao_victor/Projects/Teste234/tests/CalculatorTest.php" line="16" assertions="1" time="0.000189"/>
-        <testcase name="testMultiply" class="App\Tests\CalculatorTest" classname="App.Tests.CalculatorTest" file="/home/joao_victor/Projects/Teste234/tests/CalculatorTest.php" line="22" assertions="1" time="0.000210"/>
-        <testcase name="testDivide" class="App\Tests\CalculatorTest" classname="App.Tests.CalculatorTest" file="/home/joao_victor/Projects/Teste234/tests/CalculatorTest.php" line="28" assertions="1" time="0.000271"/>
-        <testcase name="testDivideByZero" class="App\Tests\CalculatorTest" classname="App.Tests.CalculatorTest" file="/home/joao_victor/Projects/Teste234/tests/CalculatorTest.php" line="34" assertions="2" time="0.001439"/>
+  <testsuite name="" tests="5" assertions="6" errors="0" warnings="0" failures="0" skipped="0" time="0.002767">
+    <testsuite name="Application Test Suite" tests="5" assertions="6" errors="0" warnings="0" failures="0" skipped="0" time="0.002767">
+      <testsuite name="App\Tests\CalculatorTest" file="/home/joao_victor/Projects/Teste234/tests/CalculatorTest.php" tests="5" assertions="6" errors="0" warnings="0" failures="0" skipped="0" time="0.002767">
+        <testcase name="testAdd" class="App\Tests\CalculatorTest" classname="App.Tests.CalculatorTest" file="/home/joao_victor/Projects/Teste234/tests/CalculatorTest.php" line="10" assertions="1" time="0.001564"/>
+        <testcase name="testSubtract" class="App\Tests\CalculatorTest" classname="App.Tests.CalculatorTest" file="/home/joao_victor/Projects/Teste234/tests/CalculatorTest.php" line="16" assertions="1" time="0.000221"/>
+        <testcase name="testMultiply" class="App\Tests\CalculatorTest" classname="App.Tests.CalculatorTest" file="/home/joao_victor/Projects/Teste234/tests/CalculatorTest.php" line="22" assertions="1" time="0.000322"/>
+        <testcase name="testDivide" class="App\Tests\CalculatorTest" classname="App.Tests.CalculatorTest" file="/home/joao_victor/Projects/Teste234/tests/CalculatorTest.php" line="28" assertions="1" time="0.000209"/>
+        <testcase name="testDivideByZero" class="App\Tests\CalculatorTest" classname="App.Tests.CalculatorTest" file="/home/joao_victor/Projects/Teste234/tests/CalculatorTest.php" line="34" assertions="2" time="0.000452"/>
       </testsuite>
     </testsuite>
   </testsuite>

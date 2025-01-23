@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1737638386">
-  <project timestamp="1737638386">
+<coverage generated="1737640102">
+  <project timestamp="1737640102">
     <file name="/home/joao_victor/Projects/Teste234/src/Calculator.php">
       <class name="App\Calculator" namespace="global">
-        <metrics complexity="5" methods="4" coveredmethods="4" conditionals="0" coveredconditionals="0" statements="6" coveredstatements="6" elements="10" coveredelements="10"/>
+        <metrics complexity="6" methods="5" coveredmethods="4" conditionals="0" coveredconditionals="0" statements="7" coveredstatements="6" elements="12" coveredelements="10"/>
       </class>
       <line num="7" type="method" name="add" visibility="public" complexity="1" crap="1" count="1"/>
       <line num="9" type="stmt" count="1"/>
@@ -15,8 +15,10 @@
       <line num="24" type="stmt" count="2"/>
       <line num="25" type="stmt" count="1"/>
       <line num="27" type="stmt" count="1"/>
-      <metrics loc="30" ncloc="30" classes="1" methods="4" coveredmethods="4" conditionals="0" coveredconditionals="0" statements="6" coveredstatements="6" elements="10" coveredelements="10"/>
+      <line num="31" type="method" name="modulo" visibility="public" complexity="1" crap="2" count="0"/>
+      <line num="33" type="stmt" count="0"/>
+      <metrics loc="36" ncloc="35" classes="1" methods="5" coveredmethods="4" conditionals="0" coveredconditionals="0" statements="7" coveredstatements="6" elements="12" coveredelements="10"/>
     </file>
-    <metrics files="1" loc="30" ncloc="30" classes="1" methods="4" coveredmethods="4" conditionals="0" coveredconditionals="0" statements="6" coveredstatements="6" elements="10" coveredelements="10"/>
+    <metrics files="1" loc="36" ncloc="35" classes="1" methods="5" coveredmethods="4" conditionals="0" coveredconditionals="0" statements="7" coveredstatements="6" elements="12" coveredelements="10"/>
   </project>
 </coverage>

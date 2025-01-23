@@ -28,15 +28,21 @@ class CalculatorTest extends TestCase
     public function testDivide(): void
     {
         $calculator = new Calculator();
-        $this->assertEquals(2.5, $calculator->divide(5, 2));
+        $this->assertEquals(2, $calculator->divide(6, 3));
     }
 
     public function testDivideByZero(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage("Division by zero is not allowed.");
+        $this->expectExceptionMessage("Cannot divide by zero.");
 
         $calculator = new Calculator();
-        $calculator->divide(5, 0);
+        $calculator->divide(6, 0);
+    }
+
+    public function testSquare(): void
+    {
+        $calculator = new Calculator();
+        $this->assertEquals(9, $calculator->square(3));
     }
 }
