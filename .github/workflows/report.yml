@@ -32,7 +32,6 @@ jobs:
           echo "  <style>" >> $REPORT_PATH
           echo "    body { font-family: Arial, sans-serif; line-height: 1.6; margin: 20px; }" >> $REPORT_PATH
           echo "    h1, h2, h3 { color: #333; }" >> $REPORT_PATH
-          echo "    pre { background-color: #f4f4f4; padding: 10px; border: 1px solid #ddd; overflow-x: auto; }" >> $REPORT_PATH
           echo "    .commit { margin-bottom: 20px; }" >> $REPORT_PATH
           echo "    .divider { border-top: 1px solid #ddd; margin: 20px 0; }" >> $REPORT_PATH
           echo "  </style>" >> $REPORT_PATH
@@ -40,23 +39,11 @@ jobs:
           echo "<body>" >> $REPORT_PATH
 
           echo "<h1>Relatório de Commits para PR #${PR_NUMBER}</h1>" >> $REPORT_PATH
-          echo "<p>Este relatório contém todos os commits e suas alterações associadas para o <strong>PR #${PR_NUMBER}</strong>.</p>" >> $REPORT_PATH
+          echo "<p>Este relatório contém todos os commits associados ao <strong>PR #${PR_NUMBER}</strong>.</p>" >> $REPORT_PATH
           echo "<hr class='divider'>" >> $REPORT_PATH
 
           echo "<h2>Commits neste PR:</h2>" >> $REPORT_PATH
           git log $BASE_SHA..$HEAD_SHA --oneline --pretty=format:"<div class='commit'><h3>Commit [%h]</h3><p><strong>Autor:</strong> %an, <strong>Data:</strong> %ar</p><p><strong>Mensagem:</strong> %s</p></div>" >> $REPORT_PATH
-
-          echo "<hr class='divider'>" >> $REPORT_PATH
-          echo "<h2>Alterações Detalhadas:</h2>" >> $REPORT_PATH
-          git log $BASE_SHA..$HEAD_SHA --oneline --pretty=format:"%h" | while read commit_hash; do
-            COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s" $commit_hash)
-            echo "<div class='commit'>" >> $REPORT_PATH
-            echo "<h3>Commit [$commit_hash] - $COMMIT_MESSAGE</h3>" >> $REPORT_PATH
-            echo "<pre>" >> $REPORT_PATH
-            git show $commit_hash --patch | tail -n +2 >> $REPORT_PATH
-            echo "</pre>" >> $REPORT_PATH
-            echo "</div>" >> $REPORT_PATH
-          done
 
           echo "</body>" >> $REPORT_PATH
           echo "</html>" >> $REPORT_PATH
