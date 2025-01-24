@@ -21,7 +21,7 @@ jobs:
         committer: GitHub Actions <actions@github.com>
         author: Seu Nome <seu-email@example.com>
         branch: auto-pr-branch  # Nome da branch que será criada para a PR
-        base: main  # Branch base para a PR
+        base: master  # Branch base para a PR
         title: PR automática para atualizar mudanças
         body: |
           Esta PR foi criada automaticamente para atualizar mudanças da branch `develop` para a branch `main`.
