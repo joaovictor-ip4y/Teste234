@@ -3,7 +3,7 @@ name: Notificar Slack em Eventos
 on:
   push:
     branches:
-      - main
+      - master
   pull_request:
     types: [opened, closed]
   workflow_run:
