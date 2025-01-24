@@ -1,0 +1,33 @@
+name: Notificar Slack em Eventos
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, closed]
+  workflow_run:
+    workflows: ["Build"]
+    types:
+      - completed
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Enviar notificação para o Slack
+      if: always() # Sempre enviar a notificação, mesmo se o job falhar
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      run: |
+        STATUS=${{ job.status }}
+        if [ "$STATUS" == "success" ]; then
+          MESSAGE=":white_check_mark: O workflow completou com sucesso!"
+        elif [ "$STATUS" == "failure" ]; then
+          MESSAGE=":x: O workflow falhou!"
+        else
+          MESSAGE=":warning: O workflow está em estado desconhecido!"
+        fi
+
+        curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"${MESSAGE}\"}" $SLACK_WEBHOOK_URL
