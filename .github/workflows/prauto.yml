@@ -14,7 +14,19 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
+    - name: Check if branch is hotfix
+      id: check_branch
+      run: |
+        if [[ "${{ github.event.pull_request.head.ref }}" == hotfix* ]]; then
+          echo "Branch is hotfix"
+          echo "::set-output name=hotfix::true"
+        else
+          echo "Branch is not hotfix"
+          echo "::set-output name=hotfix::false"
+        fi
+
     - name: Create PR to dev
+      if: steps.check_branch.outputs.hotfix == 'true'
       env:
         PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
       run: |
