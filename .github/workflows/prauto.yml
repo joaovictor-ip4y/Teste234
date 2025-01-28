@@ -40,9 +40,12 @@ jobs:
           fi
 
       - name: Push changes if no conflicts
+<<<<<<< HEAD
+=======
 
         if: steps.check_conflict.outcome == 'success'
 
+>>>>>>> origin/hotfix/teste2
         if: success()
         run: git push origin dev
         env:
