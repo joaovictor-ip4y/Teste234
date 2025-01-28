@@ -1,29 +1,36 @@
 name: Merge Back Hotfix
 
 on:
-  push:
-    branches:
-      - 'hotfix/*'  # Acionado para branches que começam com "hotfix/"
+  workflow_run:
+    workflows: ["CI"]  # Substitua "CI" pelo nome do seu workflow de CI
+    types:
+      - completed
 
 jobs:
   merge-back:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
     - name: Check out code
       uses: actions/checkout@v2
+      with:
+        fetch-depth: 0  # Obtém todo o histórico do repositório
 
     - name: Set up Git
       run: |
-        git config user.name "${{ github.event.pusher.name }}"
-        git config user.email "${{ github.event.pusher.email }}"
+        git config user.name "${{ github.event.workflow_run.actor }}"
+        git config user.email "${{ github.event.workflow_run.actor_email }}"
 
     - name: Checkout master branch
       run: git checkout master
 
+    - name: Update master branch
+      run: git pull origin master
+
     - name: Merge hotfix into master
       run: |
-        git merge --no-ff ${{ github.ref_name }}  # Merge branch hotfix into master
+        git merge --no-ff ${{ github.head_ref }}  # Merge branch hotfix into master
 
     - name: Push changes to master
       run: git push origin master
@@ -31,9 +38,12 @@ jobs:
     - name: Checkout dev branch
       run: git checkout dev
 
+    - name: Update dev branch
+      run: git pull origin dev
+
     - name: Merge hotfix into dev
       run: |
-        git merge --no-ff ${{ github.ref_name }}  # Merge branch hotfix into dev
+        git merge --no-ff ${{ github.head_ref }}  # Merge branch hotfix into dev
 
     - name: Push changes to dev
       run: git push origin dev
