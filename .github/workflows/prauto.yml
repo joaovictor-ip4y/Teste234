@@ -1,45 +1,32 @@
-name: Merge Back Hotfix
+name: Merge Hotfix to Dev
 
 on:
-  push:
+  pull_request:
     branches:
-      - 'hotfix/*'  # Acionado para branches que começam com "hotfix/"
+      - master
+    types: [closed]
 
 jobs:
   merge-back:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     steps:
-    - name: Check out code
-      uses: actions/checkout@v2
-      with:
-        fetch-depth: 0  # Obtém todo o histórico do repositório
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-    - name: Set up Git
-      run: |
-        git config user.name "${{ github.event.pusher.name }}"
-        git config user.email "${{ github.event.pusher.email }}"
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
-    - name: Checkout master branch
-      run: git checkout master
+      - name: Checkout target branch
+        run: git checkout dev
 
-    - name: Update master branch
-      run: git pull origin master
+      - name: Merge changes from master
+        run: git merge master
 
-    - name: Merge hotfix into master
-      run: git merge --no-ff ${{ github.ref_name }}  # Merge branch hotfix into master
-
-    - name: Push changes to master
-      run: git push origin master
-
-    - name: Checkout dev branch
-      run: git checkout dev
-
-    - name: Update dev branch
-      run: git pull origin dev
-
-    - name: Merge hotfix into dev
-      run: git merge --no-ff ${{ github.ref_name }}  # Merge branch hotfix into dev
-
-    - name: Push changes to dev
-      run: git push origin dev
+      - name: Push changes
+        run: git push origin dev
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
