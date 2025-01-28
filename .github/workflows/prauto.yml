@@ -26,10 +26,21 @@ jobs:
       - name: Checkout target branch
         run: git checkout dev
 
-      - name: Merge changes from master
-        run: git merge master --allow-unrelated-histories
+      - name: Attempt to merge changes from master
+        id: merge
+        run: |
+          git merge master --allow-unrelated-histories || echo "Merge conflict detected" > merge_status.txt
 
-      - name: Push changes
+      - name: Check for merge conflicts
+        id: check_conflict
+        run: |
+          if grep -q "Merge conflict detected" merge_status.txt; then
+            echo "Merge conflict detected. Aborting merge."
+            exit 1
+          fi
+
+      - name: Push changes if no conflicts
+        if: steps.check_conflict.outputs.MERGE_CONFLICT != 'true'
         run: git push origin dev
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
