@@ -40,7 +40,10 @@ jobs:
           fi
 
       - name: Push changes if no conflicts
+
         if: steps.check_conflict.outcome == 'success'
+
+        if: success()
         run: git push origin dev
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
