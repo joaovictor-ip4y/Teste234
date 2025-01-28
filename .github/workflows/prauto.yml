@@ -27,7 +27,7 @@ jobs:
         run: git checkout dev
 
       - name: Merge changes from master
-        run: git merge master
+        run: git merge master --allow-unrelated-histories
 
       - name: Push changes
         run: git push origin dev
