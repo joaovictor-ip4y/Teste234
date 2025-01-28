@@ -12,8 +12,6 @@ jobs:
     steps:
     - name: Check out code
       uses: actions/checkout@v2
-      with:
-        fetch-depth: 0  # Obtém todo o histórico do repositório
 
     - name: Set up Git
       run: |
@@ -22,9 +20,6 @@ jobs:
 
     - name: Checkout master branch
       run: git checkout master
-
-    - name: Update master branch
-      run: git pull origin master
 
     - name: Merge hotfix into master
       run: |
@@ -35,9 +30,6 @@ jobs:
 
     - name: Checkout dev branch
       run: git checkout dev
-
-    - name: Update dev branch
-      run: git pull origin dev
 
     - name: Merge hotfix into dev
       run: |
