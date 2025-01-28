@@ -8,7 +8,6 @@ on:
 jobs:
   merge-back:
     runs-on: ubuntu-latest
-
     steps:
     - name: Check out code
       uses: actions/checkout@v2
@@ -27,11 +26,20 @@ jobs:
       run: git pull origin master
 
     - name: Merge hotfix into master
-      run: |
-        git merge --no-ff ${{ github.ref_name }}  # Merge branch hotfix into master
+      run: git merge --no-ff ${{ github.ref_name }}  # Merge branch hotfix into master
 
-    - name: Force Push changes to master
-      run: git push origin master --force
+    - name: Wait for status checks
+      id: wait-for-status-checks
+      run: |
+        checks=$(gh api repos/${{ github.repository }}/commits/${{ github.sha }}/status-checks | jq -r '.[] | select(.name == "test") | .status')
+        while [ "$checks" != "completed" ]; do
+          echo "Waiting for status checks to complete..."
+          sleep 30
+          checks=$(gh api repos/${{ github.repository }}/commits/${{ github.sha }}/status-checks | jq -r '.[] | select(.name == "test") | .status')
+        done
+
+    - name: Push changes to master
+      run: git push origin master
 
     - name: Checkout dev branch
       run: git checkout dev
@@ -40,8 +48,7 @@ jobs:
       run: git pull origin dev
 
     - name: Merge hotfix into dev
-      run: |
-        git merge --no-ff ${{ github.ref_name }}  # Merge branch hotfix into dev
+      run: git merge --no-ff ${{ github.ref_name }}  # Merge branch hotfix into dev
 
-    - name: Force Push changes to dev
-      run: git push origin dev --force
+    - name: Push changes to dev
+      run: git push origin dev
