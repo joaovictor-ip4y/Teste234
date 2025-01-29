@@ -36,12 +36,12 @@ jobs:
       uses: actions/github-script@v6
       with:
         script: |
-          const { context } = require('@actions/github');
+          const githubContext = require('@actions/github').context;
           github.rest.checks.create({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
+            owner: githubContext.repo.owner,
+            repo: githubContext.repo.repo,
             name: 'Auto Merge Notification',
-            head_sha: context.payload.pull_request.head.sha,
+            head_sha: githubContext.payload.pull_request.head.sha,
             status: 'completed',
             conclusion: 'success',
             output: {
@@ -50,4 +50,4 @@ jobs:
             },
           });
       env:
-        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN  }}
