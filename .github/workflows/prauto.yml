@@ -1,45 +1,31 @@
-name: Merge Back Hotfix
+name: Auto Merge Back to Dev
 
 on:
   push:
     branches:
-      - 'hotfix/*'  # Acionado para branches que começam com "hotfix/"
+      - master
 
 jobs:
-  merge-back:
+  auto-merge:
+    name: Auto Merge Master to Dev
     runs-on: ubuntu-latest
-
+    
     steps:
-    - name: Check out code
+    - name: Checkout the repository
       uses: actions/checkout@v2
-      with:
-        fetch-depth: 0  # Obtém todo o histórico do repositório
 
     - name: Set up Git
       run: |
-        git config user.name "${{ github.event.pusher.name }}"
-        git config user.email "${{ github.event.pusher.email }}"
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-    - name: Checkout master branch
-      run: git checkout master
+    - name: Fetch all branches
+      run: git fetch origin
 
-    - name: Update master branch
-      run: git pull origin master
-
-    - name: Merge hotfix into master
-      run: git merge --no-ff ${{ github.ref_name }}  # Merge branch hotfix into master
-
-    - name: Push changes to master
-      run: git push origin master
-
-    - name: Checkout dev branch
-      run: git checkout dev
-
-    - name: Update dev branch
-      run: git pull origin dev
-
-    - name: Merge hotfix into dev
-      run: git merge --no-ff ${{ github.ref_name }}  # Merge branch hotfix into dev
-
-    - name: Push changes to dev
-      run: git push origin dev
+    - name: Merge master into dev
+      run: |
+        git checkout dev
+        git merge master --allow-unrelated-histories
+        git push origin dev
+      env:
+        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
