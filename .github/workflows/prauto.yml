@@ -36,7 +36,7 @@ jobs:
       uses: actions/github-script@v6
       with:
         script: |
-          const { context, github } = require('@actions/github');
+          const { context } = require('@actions/github');
           github.rest.checks.create({
             owner: context.repo.owner,
             repo: context.repo.repo,
