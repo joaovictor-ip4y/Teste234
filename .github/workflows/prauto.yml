@@ -22,11 +22,18 @@ jobs:
       - name: Fetch all branches
         run: git fetch --all
 
+      - name: Debug: List branches
+        run: git branch -a
+
+      - name: Checkout develop branch
+        run: git checkout develop
+
       - name: Merge main into develop
         run: |
-          git checkout develop
-          git merge main
-          git push origin develop
+          git merge main || echo "Merge conflict detected. Manual resolution required."
+
+      - name: Push changes to develop
+        run: git push origin develop || echo "Push failed. Please check permissions and branch protection rules."
 
       - name: Create pull request
         uses: peter-evans/create-pull-request@v4
