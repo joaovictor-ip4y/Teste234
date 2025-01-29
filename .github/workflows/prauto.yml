@@ -30,7 +30,7 @@ jobs:
         git checkout dev
         git merge master --allow-unrelated-histories || echo "Merge conflict" && exit 1
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
       continue-on-error: true
 
     - name: Create comment on PR if merge fails
