@@ -1,14 +1,13 @@
-name: Merge Hotfix to Dev
+name: Merge Back
 
 on:
-  pull_request:
+  push:
     branches:
-      - master
-    types: [closed]
+      - main
+  workflow_dispatch:
 
 jobs:
   merge-back:
-    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     steps:
@@ -17,23 +16,27 @@ jobs:
 
       - name: Configure Git
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
       - name: Fetch all branches
         run: git fetch --all
 
-      - name: Checkout target branch
-        run: git checkout dev
-
-      - name: Attempt to merge changes from master
-        id: merge
+      - name: Merge main into develop
         run: |
-          git merge master --allow-unrelated-histories || echo "Merge conflict detected" > merge_status.txt
+          git checkout develop
+          git merge main
+          git push origin develop
 
-      - name: Check for merge conflicts
-        id: check_conflict
-        run: |
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v4
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          commit-message: 'Merge main into develop'
+          branch: merge-main-into-develop
+          title: 'Merge main into develop'
+          body: 'This is an automated pull request to merge changes from main into develop.'
+          base: develop
           if grep -q "Merge conflict detected" merge_status.txt; then
             echo "Merge conflict detected. Aborting merge."
             exit 1
