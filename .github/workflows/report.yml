@@ -1,12 +1,14 @@
-name: Commit Report
+name: Relatório de Commits
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [closed]
 
 jobs:
   commit_report:
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'master'
     runs-on: ubuntu-latest
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v2
@@ -14,30 +16,55 @@ jobs:
       - name: Fetch all commits
         run: git fetch --prune --unshallow
 
-      - name: Generate commit report
+      - name: Gerar relatório de commits em TXT
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          echo "Commit Report" > commit_report.txt
-          echo "================" >> commit_report.txt
-          git log --oneline --pretty=format:"%h - %an, %ar : %s" | sort | uniq >> commit_report.txt
-          echo "End of Commit Report" >> commit_report.txt
-          cat commit_report.txt  # Exibe o conteúdo do arquivo gerado para debug
+          REPORT_PATH="commit_report.txt"
 
-      - name: Upload commit report
+          {
+            echo "Relatório de Commits da PR #${PR_NUMBER}";
+            echo "Este relatório contém todos os commits associados ao PR #${PR_NUMBER}.";
+            echo "------------------------------------------------------------";
+            echo "Commits neste PR:";
+            git log $BASE_SHA..$HEAD_SHA --oneline --pretty=format:"Commit [%h] - Autor: %an, Data: %ar, Mensagem: %s";
+            echo "------------------------------------------------------------";
+          } > $REPORT_PATH
+
+          echo "Relatório de Commits da PR #${PR_NUMBER}" > $REPORT_PATH
+          echo "Este relatório contém todos os commits associados ao PR #${PR_NUMBER}." >> $REPORT_PATH
+          echo "------------------------------------------------------------" >> $REPORT_PATH
+
+          echo "Commits neste PR:" >> $REPORT_PATH
+          git log $BASE_SHA..$HEAD_SHA --oneline --pretty=format:"Commit [%h] - Autor: %an, Data: %ar, Mensagem: %s" >> $REPORT_PATH
+          echo "------------------------------------------------------------" >> $REPORT_PATH
+
+
+      - name: Upload TXT commit report as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: commit-report
+          name: commit-report-txt
           path: commit_report.txt
 
-      - name: Create comment on PR
-        if: github.event.pull_request
-        run: |
-          # Get the PR number
-          PR_NUMBER=${{ github.event.pull_request.number }}
-
-          # Read the commit report content
-          REPORT_CONTENT=$(cat commit_report.txt)
-
-          # Use GitHub CLI to create a comment on the PR
-          gh pr comment $PR_NUMBER --body "$REPORT_CONTENT"
+      - name: Publicar comentário com link de download
+        uses: actions/github-script@v6
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+        with:
+          github-token: ${{ secrets.PAT_TOKEN }}
+          script: |
+            const prNumber = ${{ github.event.pull_request.number }};
+            const repoUrl = `https://github.com/${{ github.repository }}`;
+            const artifactUrl = `${repoUrl}/actions/runs/${{ github.run_id }}`;
+            const commentBody = `
+              ### 📄 Relatório de Commits da PR #${prNumber}
+
+              Você pode baixar o relatório detalhado em TXT [aqui](${artifactUrl}).
+            `;
+            await github.rest.issues.createComment({
+              ...context.repo,
+              issue_number: prNumber,
+              body: commentBody,
+            });
