@@ -1,12 +1,14 @@
 name: Auto Merge Back to Dev
 
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches:
       - master
 
 jobs:
   auto-merge:
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'hotfix/')
     name: Auto Merge Master to Dev
     runs-on: ubuntu-latest
     
