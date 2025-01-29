@@ -48,6 +48,7 @@ jobs:
         run: git push origin develop
 
       - name: Create pull request
+        if: steps.check_conflict.outcome == 'success'
         uses: peter-evans/create-pull-request@v4
         with:
           token: ${{ secrets.PAT_TOKEN }}
