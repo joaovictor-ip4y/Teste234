@@ -28,12 +28,12 @@ jobs:
       id: merge
       run: |
         git checkout dev
-        git merge master --allow-unrelated-histories || echo "Merge conflict" && exit 1
+        git merge master --allow-unrelated-histories || echo "Merge conflict detected" && exit 1
       env:
         GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
       continue-on-error: true
 
-    - name: Create comment on PR if merge fails
+    - name: Notify on merge conflict
       if: failure()
       uses: actions/github-script@v6
       with:
@@ -46,4 +46,5 @@ jobs:
             issue_number: prNumber,
             body: comment
           });
+      env:
         GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
