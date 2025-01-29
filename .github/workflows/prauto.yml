@@ -31,3 +31,16 @@ jobs:
         git push origin dev
       env:
         GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+
+    - name: Notify completion
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const { context, github } = require('@actions/github');
+          github.rest.issues.createComment({
+            ...context.repo,
+            issue_number: context.payload.pull_request.number,
+            body: 'Merge from master to dev has been successfully completed.'
+          });
+      env:
+        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
