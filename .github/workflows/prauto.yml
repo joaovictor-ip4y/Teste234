@@ -25,9 +25,25 @@ jobs:
       run: git fetch origin
 
     - name: Merge master into dev
+      id: merge
       run: |
         git checkout dev
-        git merge master --allow-unrelated-histories
-        git push origin dev
+        git merge master --allow-unrelated-histories || echo "Merge conflict" && exit 1
       env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      continue-on-error: true
+
+    - name: Create comment on PR if merge fails
+      if: failure()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const { context, github } = require("@actions/github");
+          const prNumber = context.payload.pull_request.number;
+          const comment = "The automatic merge from master to dev failed due to a merge conflict. Please resolve the conflict manually.";
+          github.rest.issues.createComment({
+            ...context.repo,
+            issue_number: prNumber,
+            body: comment
+          });
         GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
