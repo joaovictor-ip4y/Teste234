@@ -36,10 +36,10 @@ jobs:
       uses: actions/github-script@v6
       with:
         script: |
-          const githubContext = require('@actions/github').context;
-          require('@actions/github').rest.issues.createComment({
-            ...githubContext.repo,
-            issue_number: githubContext.payload.pull_request.number,
+          github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.payload.pull_request.number,
             body: 'Merge from master to dev has been successfully completed.'
           });
       env:
