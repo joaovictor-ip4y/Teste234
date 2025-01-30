@@ -1,24 +1,24 @@
-name: Notificar Slack em Pull Requests
+name: notificar slack em pr 
 
-on:
-  pull_request:
+on: 
+  pull_request: 
     branches:
-      - '**'
-    types: [opened]
+     - '**'
+     types: [opened]
 
 jobs:
   notify:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Enviar notificação para o Slack
+    - name: Enviar notificação par slack
       env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK WEBHOOK URL}}     
         PR_TITLE: ${{ github.event.pull_request.title }}
         PR_URL: ${{ github.event.pull_request.html_url }}
         PR_USER: ${{ github.event.pull_request.user.login }}
-        PR_BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
-        PR_HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
-      run: |
-        MESSAGE="*Nova Pull Request Aberta* \n*Título:* ${PR_TITLE}\n*Usuário:* ${PR_USER}\n*De:* ${PR_HEAD_BRANCH}\n*Para:* ${PR_BASE_BRANCH}\n*Link:* ${PR_URL}"
+        PR_BASE_BRANCH: ${{ github.event.pull_request_base_ref }}
+        PR_HEAD_BRANCH: ${{ github.event.pull_request_head.ref }}
+       run: | 
+        MESSAGE="*Nova PR Aberta \n*Titulo:* ${PR_TITLE}\n*Usuário:* ${PR_USER}\n*De:* ${PR_HEAD_BRANCH}\n*Para:* ${PR_BASE_BRANCH}\n*Link:* ${PR_URL}"  
         curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"${MESSAGE}\"}" $SLACK_WEBHOOK_URL
