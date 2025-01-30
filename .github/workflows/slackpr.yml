@@ -3,7 +3,6 @@ name: notificar slack em pr
 on: 
   pull_request: 
     branches:
-     - '**'
      types: [opened]
 
 jobs:
