@@ -31,22 +31,3 @@ jobs:
         git push origin dev
       env:
         GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
-
-    - name: Notify completion
-      uses: actions/github-script@v6
-      with:
-        script: |
-          github.rest.checks.create({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            name: 'Auto Merge Notification',
-            head_sha: context.payload.pull_request.head.sha,
-            status: 'completed',
-            conclusion: 'success',
-            output: {
-              title: 'Merge Completed',
-              summary: 'Merge from master to dev has been successfully completed.',
-            },
-          });
-      env:
-        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
