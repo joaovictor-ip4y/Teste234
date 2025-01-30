@@ -36,14 +36,12 @@ jobs:
       uses: actions/github-script@v6
       with:
         script: |
-          const { repo, payload } = context;
-          const { GITHUB_TOKEN } = process.env;
-          const octokit = new github.getOctokit(GITHUB_TOKEN);
-          octokit.rest.checks.create({
-            owner: repo.owner,
-            repo: repo.repo,
+          const { context, github } = require('@actions/github-script');
+          await github.rest.checks.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
             name: 'Auto Merge Notification',
-            head_sha: payload.pull_request.head.sha,
+            head_sha: context.payload.pull_request.head.sha,
             status: 'completed',
             conclusion: 'success',
             output: {
