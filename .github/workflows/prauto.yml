@@ -31,9 +31,13 @@ jobs:
         git checkout dev
         git merge master --allow-unrelated-histories
         git push origin dev
+      # env:
+      #   GITHUB_TOKEN: seu_token_aqui
       env:
-        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
-
+        #PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+        #GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
     - name: Notify via Slack
       run: |
-        curl -X POST -H 'Content-type: application/json' --data '{"text":"O workflow Auto Merge Back to Dev foi concluído com sucesso. Pull Request: ${{ github.event.pull_request.html_url }} Branch: ${{ github.event.pull_request.head.ref }}"}' ${{ secrets.SLACK_WEBHOOK_URL }}
+        curl -X POST -H 'Content-type: application/json' --data '{"text":"O workflow Auto Merge Back to Dev foi concluído com sucesso. Pull Request: ${{ github.event.pull_request.html_url }} Branch: ${{ github.event.pull_request.head.ref }}"}' sua_url_do_webhook_aqui
+      # env:
+      #   SLACK_WEBHOOK_URL: sua_url_do_webhook_aqui
