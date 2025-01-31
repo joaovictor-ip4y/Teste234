@@ -33,7 +33,9 @@ jobs:
         git push origin dev
       # env:
       #   GITHUB_TOKEN: seu_token_aqui
-
+      env:
+        #PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+        #GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
     - name: Notify via Slack
       run: |
         curl -X POST -H 'Content-type: application/json' --data '{"text":"O workflow Auto Merge Back to Dev foi concluído com sucesso. Pull Request: ${{ github.event.pull_request.html_url }} Branch: ${{ github.event.pull_request.head.ref }}"}' sua_url_do_webhook_aqui
