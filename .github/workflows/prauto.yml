@@ -31,4 +31,3 @@ jobs:
         git checkout dev
         git merge master --allow-unrelated-histories
         git push origin dev
-
