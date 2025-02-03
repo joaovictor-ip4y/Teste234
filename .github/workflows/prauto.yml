@@ -1,37 +1,42 @@
-name: Merge Back to Dev
+name: Auto Merge Back to Dev
 
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches:
       - master
 
 jobs:
-  merge-back:
+  auto-merge:
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'hotfix/')
+    name: Auto Merge Master to Dev
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+    - name: Checkout the repository
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0  
 
-      - name: Set up Git
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+    - name: Set up Git
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Check if dev branch exists
-        run: |
-          if git show-ref --verify --quiet refs/heads/dev; then
-            echo "Branch dev exists."
-          else
-            echo "Branch dev does not exist. Creating branch dev."
-            git checkout -b dev
-            git push origin dev
-          fi
-
-      - name: Merge main into dev
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT_JOAO }}
-        run: |
+    - name: Ensure dev branch exists and is up-to-date
+      run: |
+        if git ls-remote --heads origin dev | grep -q "refs/heads/dev"; then
           git checkout dev
-          git merge main
+          git pull origin dev
+        else
+          git checkout -b dev
           git push origin dev
+        fi
+
+    - name: Merge master into dev
+      run: |
+        git checkout dev
+        git merge master --allow-unrelated-histories
+        git push origin dev
+      env:
+        GITHUB_TOKEN: ${{ secrets.JOAO }}
