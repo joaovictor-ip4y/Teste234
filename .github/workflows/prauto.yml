@@ -16,7 +16,7 @@ jobs:
     - name: Checkout the repository
       uses: actions/checkout@v2
       with:
-        fetch-depth: 0
+        fetch-depth: 0  
 
     - name: Set up Git
       run: |
@@ -34,6 +34,3 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
 
-    - name: Notify via Slack
-      run: |
-        curl -X POST -H 'Content-type: application/json' --data '{"text":"O workflow Auto Merge Back to Dev foi concluído com sucesso. Pull Request: ${{ github.event.pull_request.html_url }} Branch: ${{ github.event.pull_request.head.ref }}"}' ${{ secrets.SLACK_WEBHOOK_URL }}
