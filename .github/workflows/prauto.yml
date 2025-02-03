@@ -32,7 +32,7 @@ jobs:
         git merge master --allow-unrelated-histories
         git push origin dev
       env:
-        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.TESTE }}
 
     - name: Notify via Slack
       run: |
