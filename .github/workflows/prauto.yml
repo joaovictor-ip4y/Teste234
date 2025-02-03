@@ -18,9 +18,19 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
+      - name: Check if dev branch exists
+        run: |
+          if git show-ref --verify --quiet refs/heads/dev; then
+            echo "Branch dev exists."
+          else
+            echo "Branch dev does not exist. Creating branch dev."
+            git checkout -b dev
+            git push origin dev
+          fi
+
       - name: Merge main into dev
         env:
-          GITHUB_TOKEN: ${{ secrets.JOAO}}
+          GITHUB_TOKEN: ${{ secrets.PAT_JOAO }}
         run: |
           git checkout dev
           git merge main
