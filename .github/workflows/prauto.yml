@@ -1,32 +1,27 @@
-name: Auto Merge Back to Dev
+name: Merge Back to Dev
 
 on:
-  pull_request:
-    types: [closed]
+  push:
     branches:
-      - master
+      - main
 
 jobs:
-  auto-merge:
-    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'hotfix/')
-    name: Auto Merge Master to Dev
+  merge-back:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout the repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0  
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Set up GitHub CLI
-      uses: cli/cli@v2
-      with:
-        github_token: ${{ secrets.PAT_TOKEN }}  # Usa o token de GitHub Actions
+      - name: Set up Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-    - name: Create Pull Request from master to dev
-      run: |
-        gh pr create --base dev --head master --title "Auto Merge from Master to Dev" --body "Automated PR to merge master into dev" --labels "auto-merge"
-
-    - name: Merge the Pull Request
-      run: |
-        gh pr merge --merge --auto --delete-branch $(gh pr list --state=open --head master --json number -q ".[].number")
+      - name: Merge main into dev
+        env:
+          GITHUB_TOKEN: ${{ secrets.JOAO}}
+        run: |
+          git checkout dev
+          git merge main
+          git push origin dev
