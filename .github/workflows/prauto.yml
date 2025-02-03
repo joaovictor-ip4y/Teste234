@@ -14,23 +14,30 @@ jobs:
     
     steps:
     - name: Checkout the repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0  
 
+    - name: Generate GitHub App Token
+      id: generate-token
+      uses: tibdex/github-app-token@v1
+      with:
+        app_id: ${{ secrets.TESTED }}
+        private_key: ${{ secrets.GITTEST }}
+
     - name: Set up Git
       run: |
-        git config --global user.name "github-actions[bot]"
-        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git config --global user.name "GitHub Actions Bot"
+        git config --global user.email "actions@github.com"
 
     - name: Fetch all branches
       run: git fetch origin
 
     - name: Merge master into dev
+      env:
+        GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
       run: |
         git checkout dev
-        git merge master --allow-unrelated-histories
+        git merge master --no-ff -m "Auto-merging master into dev"
         git push origin dev
-      env:
-        GITHUB_TOKEN: ${{ secrets.DEV }}
 
