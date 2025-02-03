@@ -22,8 +22,8 @@ jobs:
       id: generate-token
       uses: tibdex/github-app-token@v1
       with:
-        app_id: ${{ secrets.TESTED }}
-        private_key: ${{ secrets.GITTEST }}
+        app_id: ${{ secrets.TESTED }}           # App ID (número)
+        private_key: ${{ secrets.GITTEST }}     # Chave privada (conteúdo .pem)
 
     - name: Set up Git
       run: |
@@ -35,9 +35,8 @@ jobs:
 
     - name: Merge master into dev
       env:
-        GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+        GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}  # Usando o token gerado pelo App
       run: |
         git checkout dev
         git merge master --no-ff -m "Auto-merging master into dev"
         git push origin dev
-
