@@ -18,25 +18,15 @@ jobs:
       with:
         fetch-depth: 0  
 
-    - name: Generate GitHub App Token
-      id: generate-token
-      uses: tibdex/github-app-token@v1
+    - name: Set up GitHub CLI
+      uses: cli/cli@v2
       with:
-        app_id: ${{ secrets.TESTED }}           # App ID (número)
-        private_key: ${{ secrets.GITTEST }}     # Chave privada (conteúdo .pem)
+        github_token: ${{ secrets.PAT_TOKEN }}  # Usa o token de GitHub Actions
 
-    - name: Set up Git
+    - name: Create Pull Request from master to dev
       run: |
-        git config --global user.name "GitHub Actions Bot"
-        git config --global user.email "actions@github.com"
+        gh pr create --base dev --head master --title "Auto Merge from Master to Dev" --body "Automated PR to merge master into dev" --labels "auto-merge"
 
-    - name: Fetch all branches
-      run: git fetch origin
-
-    - name: Merge master into dev
-      env:
-        GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}  # Usando o token gerado pelo App
+    - name: Merge the Pull Request
       run: |
-        git checkout dev
-        git merge master --no-ff -m "Auto-merging master into dev"
-        git push origin dev
+        gh pr merge --merge --auto --delete-branch $(gh pr list --state=open --head master --json number -q ".[].number")
