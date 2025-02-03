@@ -12,6 +12,10 @@ jobs:
     name: Auto Merge Master to Dev
     runs-on: ubuntu-latest
     
+    permissions:
+      contents: write  # Permissões de escrita para o repositório
+      pull-requests: write  # Permissões para criar pull requests
+    
     steps:
     - name: Checkout the repository
       uses: actions/checkout@v2
@@ -26,9 +30,19 @@ jobs:
     - name: Fetch all branches
       run: git fetch origin
 
-    - name: Merge master into dev
+    - name: Create merge branch
       run: |
-        git checkout dev
+        git checkout -b merge-master-into-dev
         git merge master --allow-unrelated-histories
-        git push origin dev
 
+    - name: Push merge branch
+      run: git push origin merge-master-into-dev
+
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v3
+      with:
+        branch: merge-master-into-dev
+        base: dev
+        title: 'Auto merge master into dev'
+        body: 'This PR was created automatically to merge changes from master into dev.'
+        commit-message: 'Merge master into dev'
