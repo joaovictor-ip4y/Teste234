@@ -12,15 +12,11 @@ jobs:
     name: Auto Merge Master to Dev
     runs-on: ubuntu-latest
     
-    permissions:
-      contents: write  # Permissões de escrita para o repositório
-      pull-requests: write  # Permissões para criar pull requests
-    
     steps:
     - name: Checkout the repository
       uses: actions/checkout@v2
       with:
-        fetch-depth: 0  # Obter todo o histórico para todos os branches e tags
+        fetch-depth: 0  
 
     - name: Set up Git
       run: |
@@ -30,19 +26,14 @@ jobs:
     - name: Fetch all branches
       run: git fetch origin
 
-    - name: Create merge branch
+    - name: Merge master into dev
       run: |
-        git checkout -b merge-master-into-dev
+        git checkout dev
         git merge master --allow-unrelated-histories
+        git push origin dev
+      env:
+        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
 
-    - name: Push merge branch
-      run: git push origin merge-master-into-dev
-
-    - name: Create Pull Request
-      uses: peter-evans/create-pull-request@v3
-      with:
-        branch: merge-master-into-dev
-        base: dev
-        title: 'Auto merge master into dev'
-        body: 'This PR was created automatically to merge changes from master into dev.'
-        commit-message: 'Merge master into dev'
+    - name: Notify via Slack
+      run: |
+        curl -X POST -H 'Content-type: application/json' --data '{"text":"O workflow Auto Merge Back to Dev foi concluído com sucesso. Pull Request: ${{ github.event.pull_request.html_url }} Branch: ${{ github.event.pull_request.head.ref }}"}' ${{ secrets.SLACK_WEBHOOK_URL }}
