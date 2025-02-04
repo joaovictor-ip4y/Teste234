@@ -1,67 +1,35 @@
-
-name: Auto Merge Master to Dev
-
-on:
-  push:
-name: Auto PR to dev
+name: Auto Merge Back to Dev
 
 on:
   pull_request:
+    types: [closed]
     branches:
       - master
-    types: [opened]
 
 jobs:
   auto-merge:
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'hotfix/')
+    name: Auto Merge Master to Dev
     runs-on: ubuntu-latest
-
+    
     steps:
-    - name: Check out the repository
-  create-dev-pr:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout repository
+    - name: Checkout the repository
       uses: actions/checkout@v2
+      with:
+        fetch-depth: 0  
 
-    - name: Check if branch is hotfix
-      id: check_branch
+    - name: Set up Git
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-    - name: Ensure dev branch exists
-      run: |
-        if git rev-parse --verify dev > /dev/null 2>&1
-        then
-          echo "Branch 'dev' exists."
-        else
-          echo "Branch 'dev' does not exist. Creating branch 'dev' from 'master'."
-          git checkout -b dev origin/master
-          git push origin dev
-        fi
+    - name: Fetch all branches
+      run: git fetch origin
 
     - name: Merge master into dev
       run: |
         git checkout dev
-        git merge master
+        git merge master --allow-unrelated-histories
         git push origin dev
       env:
         GITHUB_TOKEN: ${{ secrets.TESTE }}
-        if [[ "${{ github.event.pull_request.head.ref }}" == hotfix* ]]; then
-          echo "Branch is hotfix"
-          echo "::set-output name=hotfix::true"
-        else
-          echo "Branch is not hotfix"
-          echo "::set-output name=hotfix::false"
-        fi
-
-    - name: Create PR to dev
-      if: steps.check_branch.outputs.hotfix == 'true'
-      env:
-        PAT_TOKEN: ${{ secrets.JOAO }}
-      run: |
-        PR_TITLE=$(curl -s -H "Authorization: token $PAT_TOKEN" https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }} | jq -r '.title')
-        PR_BODY=$(curl -s -H "Authorization: token $PAT_TOKEN" https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }} | jq -r '.body')
-        curl -s -X POST -H "Authorization: token $PAT_TOKEN" -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/${{ github.repository }}/pulls -d "{\"title\":\"$PR_TITLE\",\"body\":\"$PR_BODY\",\"head\":\"${{ github.event.pull_request.head.ref }}\",\"base\":\"dev\"}"
-
