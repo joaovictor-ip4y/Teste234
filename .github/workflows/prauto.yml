@@ -1,38 +1,35 @@
-name: Auto Merge Master to Dev
+name: Auto Merge Back to Dev
 
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches:
       - master
 
 jobs:
   auto-merge:
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'hotfix/')
+    name: Auto Merge Master to Dev
     runs-on: ubuntu-latest
-
+    
     steps:
-    - name: Check out the repository
+    - name: Checkout the repository
       uses: actions/checkout@v2
+      with:
+        fetch-depth: 0  
 
     - name: Set up Git
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-    - name: Ensure dev branch exists
-      run: |
-        if git rev-parse --verify dev > /dev/null 2>&1
-        then
-          echo "Branch 'dev' exists."
-        else
-          echo "Branch 'dev' does not exist. Creating branch 'dev' from 'master'."
-          git checkout -b dev origin/master
-          git push origin dev
-        fi
+    - name: Fetch all branches
+      run: git fetch origin
 
     - name: Merge master into dev
       run: |
         git checkout dev
-        git merge master
+        git merge master --allow-unrelated-histories
         git push origin dev
       env:
         GITHUB_TOKEN: ${{ secrets.TESTE }}
