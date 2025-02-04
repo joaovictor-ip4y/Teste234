@@ -26,7 +26,7 @@ jobs:
     - name: Fetch all branches
       run: git fetch origin
 
-    - name: Merge master into dev
+    - name: Merge Master into dev
       run: |
         git checkout dev
         git merge master --allow-unrelated-histories
