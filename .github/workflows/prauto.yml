@@ -1,10 +1,21 @@
+
 name: Auto Merge Back to Dev
 
 on:
   pull_request:
     types: [closed]
+
+name: Auto Merge Master to Dev
+
+on:
+  push:
+name: Auto PR to dev
+
+on:
+  pull_request:
     branches:
       - master
+    types: [opened]
 
 jobs:
   auto-merge:
@@ -14,11 +25,18 @@ jobs:
     
     steps:
     - name: Checkout the repository
+    - name: Check out the repository
+  create-dev-pr:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
       uses: actions/checkout@v2
       with:
         fetch-depth: 0  
 
-    - name: Set up Git
+    - name: Check if branch is hotfix
+      id: check_branch
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
@@ -33,3 +51,20 @@ jobs:
         git push origin dev
       env:
         GITHUB_TOKEN: ${{ secrets.TESTE }}
+        if [[ "${{ github.event.pull_request.head.ref }}" == hotfix* ]]; then
+          echo "Branch is hotfix"
+          echo "::set-output name=hotfix::true"
+        else
+          echo "Branch is not hotfix"
+          echo "::set-output name=hotfix::false"
+        fi
+
+    - name: Create PR to dev
+      if: steps.check_branch.outputs.hotfix == 'true'
+      env:
+        PAT_TOKEN: ${{ secrets.JOAO }}
+      run: |
+        PR_TITLE=$(curl -s -H "Authorization: token $PAT_TOKEN" https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }} | jq -r '.title')
+        PR_BODY=$(curl -s -H "Authorization: token $PAT_TOKEN" https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }} | jq -r '.body')
+        curl -s -X POST -H "Authorization: token $PAT_TOKEN" -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/${{ github.repository }}/pulls -d "{\"title\":\"$PR_TITLE\",\"body\":\"$PR_BODY\",\"head\":\"${{ github.event.pull_request.head.ref }}\",\"base\":\"dev\"}"
+

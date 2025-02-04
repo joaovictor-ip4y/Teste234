@@ -3,7 +3,7 @@ name: Notificar Slack em Pull Requests
 on:
   pull_request:
     branches:
-      - '**'
+    - '**
     types: [opened]
 
 jobs:
@@ -21,4 +21,6 @@ jobs:
         PR_HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
       run: |
         MESSAGE="*Nova Pull Request Aberta* \n*Título:* ${PR_TITLE}\n*Usuário:* ${PR_USER}\n*De:* ${PR_HEAD_BRANCH}\n*Para:* ${PR_BASE_BRANCH}\n*Link:* ${PR_URL}"
+      run: |
+        MESSAGE=":bell: Nova Pull Request Aberta \n*Título:* ${PR_TITLE}\n*Link:* ${PR_URL}
         curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"${MESSAGE}\"}" $SLACK_WEBHOOK_URL
