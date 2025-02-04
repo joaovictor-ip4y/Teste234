@@ -18,6 +18,17 @@ jobs:
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
+    - name: Ensure dev branch exists
+      run: |
+        if git rev-parse --verify dev > /dev/null 2>&1
+        then
+          echo "Branch 'dev' exists."
+        else
+          echo "Branch 'dev' does not exist. Creating branch 'dev' from 'master'."
+          git checkout -b dev origin/master
+          git push origin dev
+        fi
+
     - name: Merge master into dev
       run: |
         git checkout dev
